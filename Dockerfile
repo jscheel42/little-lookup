@@ -14,3 +14,5 @@ ADD Cargo.toml .
 RUN ls /app
 
 RUN cargo install --path .
+
+ENTRYPOINT [ "/usr/local/cargo/bin/little-lookup" ]
