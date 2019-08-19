@@ -47,10 +47,6 @@ fn update_item(key: &rocket::http::RawStr, val: &rocket::http::RawStr) -> String
 }
 
 fn main() {
-    // let db_name = get_database();
-    // println!("{}", &db_name);
-    // let connection = get_connection();
-
     prepare_database();
 
     rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
@@ -81,32 +77,3 @@ fn prepare_database() {
         CREATE UNIQUE INDEX IF NOT EXISTS idx_items_key ON items (key);"
     ).unwrap();
 }
-
-// fn main() {
-//     // let connection = sqlite::open(":memory:").unwrap();
-//     let connection = sqlite::open("test-db.db").unwrap();
-    
-//     connection
-//         .execute(
-//             "
-//             CREATE TABLE IF NOT EXISTS users (name TEXT, age INTEGER);
-//             INSERT INTO users VALUES ('Alice', 42);
-//             INSERT INTO users VALUES ('Bob', 69);
-//             INSERT INTO users VALUES ('Charles', 70);
-//             ",
-//         )
-//         .unwrap();
-
-//     use sqlite::State;
-    
-//     let mut statement = connection
-//         .prepare("SELECT * FROM users WHERE age > ?")
-//         .unwrap();
-
-//     statement.bind(1, 50).unwrap();
-
-//     while let State::Row = statement.next().unwrap() {
-//         println!("name = {}", statement.read::<String>(0).unwrap());
-//         println!("age = {}", statement.read::<i64>(1).unwrap());
-//     }
-// }
