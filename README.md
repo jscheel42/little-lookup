@@ -4,7 +4,7 @@ Little Lookup is a simple Key/Value store for strings.
 
 ## Docker / Helm
 
-Docker image available at: https://cloud.docker.com/u/jscheel42/repository/docker/jscheel42/little-lookup
+Docker image available at: https://hub.docker.com/r/jscheel42/little-lookup
 
 Helm chart available at: https://github.com/jscheel42/helm-charts/tree/master/little-lookup
 
