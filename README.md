@@ -28,3 +28,17 @@ export LITTLE_LOOKUP_DATABASE=/your/chosen/path.db
 ```
 ./target/release/little-lookup
 ```
+
+## Usage
+
+### Set value
+
+Set key (foo) to value (bar)
+```
+localhost:8000/item/foo/bar
+```
+
+Retrieve value for key (foo)
+```
+localhost:8000/item/foo
+```
