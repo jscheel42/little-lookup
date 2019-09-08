@@ -2,30 +2,26 @@
 
 #[macro_use]
 extern crate rocket;
-
 #[macro_use]
 extern crate diesel;
-
-extern crate dotenv;
+#[macro_use]
+extern crate diesel_migrations;
 
 pub mod schema;
 pub mod models;
 
-// extern crate self as littlelookup;
-
 use diesel::prelude::*;
-// use diesel::pg::PgConnection;
 use diesel::sqlite::SqliteConnection;
-// use diesel::connection::Connection;
-use dotenv::dotenv;
-use std::env;
 use self::models::{Item, NewItem};
 
-pub fn get_connection() -> SqliteConnection {
-    dotenv().ok();
+diesel_migrations::embed_migrations!();
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+pub fn get_connection() -> SqliteConnection {
+    let key = "LITTLE_LOOKUP_DATABASE";
+    let database_url = match std::env::var(key) {
+        Ok(val) => val,
+        Err(_) => String::from("default.db")
+    };
 
     SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
@@ -67,7 +63,7 @@ fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> Strin
         val: value
     };
 
-    diesel::insert_into(items::table)
+    diesel::replace_into(items::table)
         .values(&new_item)
         .execute(&connection)
         .expect("Error creating new item");
@@ -76,28 +72,12 @@ fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> Strin
     result
 }
 
-fn main() {
-    // prepare_database();
-
-    rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
+fn prepare_database() {
+    let connection = get_connection();
+    let _ = embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
 }
 
-// fn get_database() -> String {
-//     let key = "LITTLE_LOOKUP_DATABASE";
-//     let db_name = match std::env::var(key) {
-//         Ok(val) => val,
-//         Err(_) => String::from("default.db")
-//     };
-//     db_name
-// }
-
-// fn prepare_database() {
-//     let connection = get_connection();
-//     connection.execute(
-//         "CREATE TABLE IF NOT EXISTS items (
-//             key TEXT,
-//             val TEXT
-//         );
-//         CREATE UNIQUE INDEX IF NOT EXISTS idx_items_key ON items (key);"
-//     ).unwrap();
-// }
+fn main() {
+    prepare_database();
+    rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
+}
