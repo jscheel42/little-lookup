@@ -19,7 +19,7 @@ use diesel::sqlite::SqliteConnection;
 // use diesel::connection::Connection;
 use dotenv::dotenv;
 use std::env;
-use self::models::Item;
+use self::models::{Item, NewItem};
 
 pub fn get_connection() -> SqliteConnection {
     dotenv().ok();
@@ -31,66 +31,56 @@ pub fn get_connection() -> SqliteConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
+#[get("/")]
+fn index() -> &'static str {
+    "Routes:
+  /item/<key>: Get val for <key>
+  /item/<key>/<val>: Update <val> for <key>
+"
+}
 
+#[get("/item/<id>")]
+fn get_item(id: &rocket::http::RawStr) -> String {
+    use self::schema::items::dsl::*;
 
+    let connection = get_connection();
 
-// #[get("/")]
-// fn index() -> &'static str {
-//     "Routes:
-//   /item/<key>: Get val for <key>
-//   /item/<key>/<val>: Update <val> for <key>
-// "
-// }
+    let results = items.filter(key.eq(id.as_str()))
+        .limit(1)
+        .load::<Item>(&connection)
+        .expect("Error loading item");
 
-// #[get("/item/<key>")]
-// fn get_item(key: &rocket::http::RawStr) -> String {
-//     // use sqlite::State;
+    match results.get(0) {
+        Some(x) => String::from(x.val.clone()),
+        None    => String::from("Undefined")
+    }
+}
 
-//     let connection = get_connection();
+#[get("/item/<id>/<value>")]
+fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> String {
+    use self::schema::items;
 
-//     let result = items.filter(key.eq(key.as_str()))
-//         .limit(1)
-//         .load::<Item>(&connection)
-//         .expect("Error loading item");
+    let connection = get_connection();
 
-//     item
-// }
+    let new_item = NewItem {
+        key: id,
+        val: value
+    };
 
-    // let query = format!(
-    //     "SELECT val FROM items WHERE key = '{}' LIMIT ?;",
-    //     key.as_str()
-    // );
+    diesel::insert_into(items::table)
+        .values(&new_item)
+        .execute(&connection)
+        .expect("Error creating new item");
 
-    // let mut statement = connection
-    //     .prepare(query)
-    //     .unwrap();
+    let result = format!("{}: {}", id.as_str(), value.as_str());
+    result
+}
 
-    // statement.bind(1, 1).unwrap();
+fn main() {
+    // prepare_database();
 
-    // let mut out: String = String::from("Undefined");
-    // while let State::Row = statement.next().unwrap() {
-    //     out = statement.read::<String>(0).unwrap();
-    // }
-    // out
-
-// #[get("/item/<key>/<val>")]
-// fn update_item(key: &rocket::http::RawStr, val: &rocket::http::RawStr) -> String {
-//     let connection = get_connection();
-//     let query = format!("REPLACE INTO items VALUES ('{}', '{}');", key.as_str(), val.as_str());
-
-//     connection
-//         .execute(query)
-//         .unwrap();
-    
-//     let result = format!("{}: {}", key.as_str(), val.as_str());
-//     result
-// }
-
-// fn main() {
-//     prepare_database();
-
-//     rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
-// }
+    rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
+}
 
 // fn get_database() -> String {
 //     let key = "LITTLE_LOOKUP_DATABASE";
@@ -99,12 +89,6 @@ pub fn get_connection() -> SqliteConnection {
 //         Err(_) => String::from("default.db")
 //     };
 //     db_name
-// }
-
-// fn get_connection() -> sqlite::Connection {
-//     let db_name = get_database();
-//     let connection = sqlite::open(db_name).unwrap();
-//     connection
 // }
 
 // fn prepare_database() {
