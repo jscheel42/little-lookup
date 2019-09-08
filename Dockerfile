@@ -8,7 +8,9 @@ WORKDIR /app
 ADD . .
 
 RUN apt-get update
-RUN apt-get install musl-tools -y
+RUN apt-get install -y \
+        libsqlite3-dev \
+        musl-tools
 RUN rustup target add x86_64-unknown-linux-musl
 
 RUN ls /app
