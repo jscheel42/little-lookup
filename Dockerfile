@@ -9,8 +9,10 @@ ADD . .
 
 RUN apt-get update
 RUN apt-get install -y \
+        libsqlite-dev \
         libsqlite3-dev \
         musl-tools \
+        sqlite \
         sqlite3
 RUN rustup target add x86_64-unknown-linux-musl
 
