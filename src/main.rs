@@ -52,6 +52,27 @@ fn get_item(id: &rocket::http::RawStr) -> String {
     }
 }
 
+#[get("/list")]
+fn list_items() -> String {
+    use self::schema::items::dsl::*;
+
+    let connection = get_connection();
+
+    let results = items.load::<Item>(&connection)
+        .expect("Error loading items");
+
+    let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
+            &acc.push_str(&result.key);
+            &acc.push_str(" ");
+            &acc.push_str(&result.val);
+            &acc.push_str("\n");
+            acc
+        }
+    );
+
+    result_collection
+}
+
 #[get("/item/<id>/<value>")]
 fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> String {
     use self::schema::items;
@@ -68,7 +89,7 @@ fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> Strin
         .execute(&connection)
         .expect("Error creating new item");
 
-    let result = format!("{}: {}", id.as_str(), value.as_str());
+    let result = format!("{} {}", id.as_str(), value.as_str());
     result
 }
 
@@ -79,5 +100,5 @@ fn prepare_database() {
 
 fn main() {
     prepare_database();
-    rocket::ignite().mount("/", routes![index, get_item, update_item]).launch();
+    rocket::ignite().mount("/", routes![index, get_item, update_item, list_items]).launch();
 }
