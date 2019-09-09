@@ -1,24 +1,25 @@
 # steps based on https://gist.github.com/jamesproud/4022da405709a633ba7f021a36d7b462
 
 ## BUILD IMAGE
-FROM rustlang/rust:nightly-slim as cargo-build
+FROM ekidd/rust-musl-builder:nightly-2019-08-13 as cargo-build
 
-RUN mkdir /app /data
-WORKDIR /app
-ADD . .
+ADD . ./
 
-RUN apt-get update
-RUN apt-get install -y \
+RUN sudo chown -R rust:rust .
+
+RUN sudo apt-get update
+RUN sudo apt-get install -y \
         libsqlite-dev \
         libsqlite3-dev \
         musl-tools \
         sqlite \
         sqlite3
-RUN rustup target add x86_64-unknown-linux-musl
+# RUN rustup target add x86_64-unknown-linux-musl
 
-RUN ls /app
+RUN cargo build --release
 
-RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
+# Compile command from previous image (rustlang/rust) which had problems compiling diesel w/ musl (alpine linux)
+# RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
 
 
 ## FINAL IMAGE
@@ -36,6 +37,6 @@ ENV LITTLE_LOOKUP_DATABASE /data/default.db
 USER app
 WORKDIR /home/app
 
-COPY --from=cargo-build /app/target/x86_64-unknown-linux-musl/release/little-lookup .
+COPY --from=cargo-build /home/rust/src/target/release/little-lookup .
 
 ENTRYPOINT ["/home/app/little-lookup"]
