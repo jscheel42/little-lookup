@@ -37,6 +37,6 @@ ENV LITTLE_LOOKUP_DATABASE /data/default.db
 USER app
 WORKDIR /home/app
 
-COPY --from=cargo-build /home/rust/src/target/release/little-lookup .
+COPY --from=cargo-build /home/rust/src/target/x86_64-unknown-linux-musl/release/little-lookup .
 
 ENTRYPOINT ["/home/app/little-lookup"]
