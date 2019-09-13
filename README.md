@@ -38,7 +38,24 @@ Set key (foo) to value (bar)
 localhost:8000/item/foo/bar
 ```
 
+### Get value(s)
+
 Retrieve value for key (foo)
 ```
 localhost:8000/item/foo
+```
+
+Retrieve values for all keys
+```
+localhost:8000/list
+```
+
+Retrieve values for all keys that match filter (sql like '%<X>%')
+```
+localhost:8000/list?filter=<x>
+```
+
+Retrieve values for all keys with custom delimiter <y>
+```
+localhost:8000/list?delim=<y>
 ```

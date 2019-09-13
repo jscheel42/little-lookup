@@ -33,6 +33,7 @@ fn index() -> &'static str {
     "Routes:
   /item/<key>: Get val for <key>
   /item/<key>/<val>: Update <val> for <key>
+  /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
 "
 }
 
