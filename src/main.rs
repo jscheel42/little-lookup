@@ -53,8 +53,8 @@ fn get_item(id: &RawStr) -> String {
     }
 }
 
-#[get("/list?<filter>")]
-fn list_items(filter: Option<&RawStr>) -> String {
+#[get("/list?<filter>&<delim>")]
+fn list_items(filter: Option<&RawStr>, delim: Option<&RawStr>) -> String {
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
@@ -65,12 +65,18 @@ fn list_items(filter: Option<&RawStr>) -> String {
                 let sql_filter = format!("%{}%", f);
                 items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
             }
-            _ => items.load::<Item>(&connection).expect("Error loading items")
+            None => items.load::<Item>(&connection).expect("Error loading items")
+        };
+
+    let delimiter =
+        match delim {
+            Some(d) => d.as_str(),
+            None => " "
         };
 
     let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
             &acc.push_str(&result.key);
-            &acc.push_str(" ");
+            &acc.push_str(delimiter);
             &acc.push_str(&result.val);
             &acc.push_str("\n");
             acc
@@ -96,7 +102,7 @@ fn update_item(id: &RawStr, value: &RawStr) -> String {
         .execute(&connection)
         .expect("Error creating new item");
 
-    let result = format!("{} {}", id.as_str(), value.as_str());
+    let result = format!("{}", value.as_str());
     result
 }
 
