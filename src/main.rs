@@ -10,6 +10,7 @@ extern crate diesel_migrations;
 pub mod schema;
 pub mod models;
 
+use rocket::http::RawStr;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use self::models::{Item, NewItem};
@@ -36,7 +37,7 @@ fn index() -> &'static str {
 }
 
 #[get("/item/<id>")]
-fn get_item(id: &rocket::http::RawStr) -> String {
+fn get_item(id: &RawStr) -> String {
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
@@ -52,14 +53,20 @@ fn get_item(id: &rocket::http::RawStr) -> String {
     }
 }
 
-#[get("/list")]
-fn list_items() -> String {
+#[get("/list?<filter>")]
+fn list_items(filter: Option<&RawStr>) -> String {
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
 
-    let results = items.load::<Item>(&connection)
-        .expect("Error loading items");
+    let results =
+        match filter {
+            Some(f) => {
+                let sql_filter = format!("%{}%", f);
+                items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
+            }
+            _ => items.load::<Item>(&connection).expect("Error loading items")
+        };
 
     let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
             &acc.push_str(&result.key);
@@ -74,7 +81,7 @@ fn list_items() -> String {
 }
 
 #[get("/item/<id>/<value>")]
-fn update_item(id: &rocket::http::RawStr, value: &rocket::http::RawStr) -> String {
+fn update_item(id: &RawStr, value: &RawStr) -> String {
     use self::schema::items;
 
     let connection = get_connection();
