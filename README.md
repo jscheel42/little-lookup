@@ -50,7 +50,7 @@ Retrieve values for all keys
 localhost:8000/list
 ```
 
-Retrieve values for all keys that match filter (sql like '%<X>%')
+Retrieve values for all keys that match filter (sql like '%X%')
 ```
 localhost:8000/list?filter=<x>
 ```
