@@ -10,6 +10,8 @@ extern crate diesel_migrations;
 pub mod schema;
 pub mod models;
 
+use actix_web::{web, App, HttpServer, HttpResponse, HttpRequest, Responder, get};
+use std::collections::HashMap;
 use rocket::http::RawStr;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
@@ -28,17 +30,16 @@ pub fn get_connection() -> SqliteConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-#[get("/")]
-fn index() -> &'static str {
-    "Routes:
+// #[get("/")]
+fn index() -> impl Responder {
+    let body = "Routes:
   /item/<key>: Get val for <key>
   /item/<key>/<val>: Update <val> for <key>
-  /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
-"
+  /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)";
+    HttpResponse::Ok().body(body)
 }
 
-#[get("/item/<id>")]
-fn get_item(id: &RawStr) -> String {
+fn get_item(id: web::Path<(String)>) -> impl Responder {
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
@@ -48,54 +49,70 @@ fn get_item(id: &RawStr) -> String {
         .load::<Item>(&connection)
         .expect("Error loading item");
 
-    match results.get(0) {
+    let body = match results.get(0) {
         Some(x) => String::from(x.val.clone()),
         None    => String::from("Undefined")
-    }
+    };
+
+    HttpResponse::Ok().body(body)
 }
 
-#[get("/list?<filter>&<delim>")]
-fn list_items(filter: Option<&RawStr>, delim: Option<&RawStr>) -> String {
+// #[get("/list?<filter>&<delim>")]
+// fn list_items(filter: Option<&RawStr>, delim: Option<&RawStr>) -> String {
+fn list_items(req: HttpRequest) -> impl Responder {
     use self::schema::items::dsl::*;
 
-    let connection = get_connection();
+    let query_options: String = req.query_string().parse().unwrap();
+    let query_options_map = req_query_to_map(&query_options);
 
-    let results =
-        match filter {
-            Some(f) => {
-                let sql_filter = format!("%{}%", f);
-                items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
-            }
-            None => items.load::<Item>(&connection).expect("Error loading items")
-        };
+    let filter = *query_options_map.get("filter").unwrap();
+    
+    // let filter = req.query_string().find("filter").unwrap();
 
-    let delimiter =
-        match delim {
-            Some(d) => d.as_str(),
-            None => " "
-        };
+    // println!("{}", filter);
 
-    let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
-            &acc.push_str(&result.key);
-            &acc.push_str(delimiter);
-            &acc.push_str(&result.val);
-            &acc.push_str("\n");
-            acc
-        }
-    );
+    // let connection = get_connection();
 
-    result_collection
+    HttpResponse::Ok().body(filter)
+
+    // let results =
+    //     match filter {
+    //         Some(f) => {
+    //             let sql_filter = format!("%{}%", f);
+    //             items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
+    //         }
+    //         None => items.load::<Item>(&connection).expect("Error loading items")
+    //     };
+
+    // let delimiter =
+    //     match delim {
+    //         Some(d) => d.as_str(),
+    //         None => " "
+    //     };
+
+    // let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
+    //         &acc.push_str(&result.key);
+    //         &acc.push_str(delimiter);
+    //         &acc.push_str(&result.val);
+    //         &acc.push_str("\n");
+    //         acc
+    //     }
+    // );
+
+    // result_collection
 }
 
-#[get("/item/<id>/<value>")]
-fn update_item(id: &RawStr, value: &RawStr) -> String {
+fn update_item(info: web::Path<(String, String)>) -> impl Responder {
     use self::schema::items;
+
+    let id = &info.0;
+    let value = &info.1;
 
     let connection = get_connection();
 
     let new_item = NewItem {
-        key: id,
-        val: value
+        key: id.as_str(),
+        val: value.as_str()
     };
 
     diesel::replace_into(items::table)
@@ -103,8 +120,24 @@ fn update_item(id: &RawStr, value: &RawStr) -> String {
         .execute(&connection)
         .expect("Error creating new item");
 
-    let result = format!("{}", value.as_str());
-    result
+    let body = format!("{}", value.as_str());
+
+    HttpResponse::Ok().body(body)
+}
+
+fn req_query_to_map<'a>(query_string: &'a String) -> HashMap<&'a str, &'a str> {
+    let query_vec: Vec<&str> = query_string.rsplit('&').collect();
+
+    let query_map: HashMap<&'a str, &'a str> = query_vec.iter().fold(HashMap::new(), |mut acc, query_element| {
+            let query_element_vec: Vec<&str> = query_element.split('=').collect();
+            let key = query_element_vec.get(0).unwrap();
+            let val = query_element_vec.get(1).unwrap();
+            acc.insert(key, val);
+            acc
+        }
+    );
+    
+    query_map
 }
 
 fn prepare_database() {
@@ -114,5 +147,16 @@ fn prepare_database() {
 
 fn main() {
     prepare_database();
-    rocket::ignite().mount("/", routes![index, get_item, update_item, list_items]).launch();
+    // rocket::ignite().mount("/", routes![index, get_item, update_item, list_items]).launch();
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(index))
+            .route("/item/{id}", web::get().to(get_item))
+            .route("/item/{id}/{val}", web::get().to(update_item))
+            .route("/list", web::get().to(list_items))
+    })
+    .bind("0.0.0.0:8088")
+    .unwrap()
+    .run()
+    .unwrap();
 }
