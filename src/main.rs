@@ -1,8 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use]
-extern crate rocket;
-#[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
@@ -10,9 +8,8 @@ extern crate diesel_migrations;
 pub mod schema;
 pub mod models;
 
-use actix_web::{web, App, HttpServer, HttpResponse, HttpRequest, Responder, get};
+use actix_web::{web, App, HttpServer, HttpResponse, HttpRequest, Responder};
 use std::collections::HashMap;
-use rocket::http::RawStr;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use self::models::{Item, NewItem};
@@ -30,7 +27,6 @@ pub fn get_connection() -> SqliteConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-// #[get("/")]
 fn index() -> impl Responder {
     let body = "Routes:
   /item/<key>: Get val for <key>
@@ -57,49 +53,39 @@ fn get_item(id: web::Path<(String)>) -> impl Responder {
     HttpResponse::Ok().body(body)
 }
 
-// #[get("/list?<filter>&<delim>")]
-// fn list_items(filter: Option<&RawStr>, delim: Option<&RawStr>) -> String {
 fn list_items(req: HttpRequest) -> impl Responder {
     use self::schema::items::dsl::*;
 
-    let query_options: String = req.query_string().parse().unwrap();
-    let query_options_map = req_query_to_map(&query_options);
+    let query_options: String = req.query_string().to_string();
+    let query_options_map = req_query_to_map(query_options);
 
-    let filter = *query_options_map.get("filter").unwrap();
-    
-    // let filter = req.query_string().find("filter").unwrap();
+    let connection = get_connection();
 
-    // println!("{}", filter);
+    let results =
+        match query_options_map.get("filter") {
+            Some(f) => {
+                let sql_filter = format!("%{}%", f);
+                items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
+            }
+            None => items.load::<Item>(&connection).expect("Error loading items")
+        };
 
-    // let connection = get_connection();
+    let delimiter =
+        match query_options_map.get("delim") {
+            Some(d) => d.as_str(),
+            None => " "
+        };
 
-    HttpResponse::Ok().body(filter)
+    let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
+            &acc.push_str(&result.key);
+            &acc.push_str(delimiter);
+            &acc.push_str(&result.val);
+            &acc.push_str("\n");
+            acc
+        }
+    );
 
-    // let results =
-    //     match filter {
-    //         Some(f) => {
-    //             let sql_filter = format!("%{}%", f);
-    //             items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
-    //         }
-    //         None => items.load::<Item>(&connection).expect("Error loading items")
-    //     };
-
-    // let delimiter =
-    //     match delim {
-    //         Some(d) => d.as_str(),
-    //         None => " "
-    //     };
-
-    // let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
-    //         &acc.push_str(&result.key);
-    //         &acc.push_str(delimiter);
-    //         &acc.push_str(&result.val);
-    //         &acc.push_str("\n");
-    //         acc
-    //     }
-    // );
-
-    // result_collection
+    HttpResponse::Ok().body(result_collection)
 }
 
 fn update_item(info: web::Path<(String, String)>) -> impl Responder {
@@ -125,18 +111,22 @@ fn update_item(info: web::Path<(String, String)>) -> impl Responder {
     HttpResponse::Ok().body(body)
 }
 
-fn req_query_to_map<'a>(query_string: &'a String) -> HashMap<&'a str, &'a str> {
-    let query_vec: Vec<&str> = query_string.rsplit('&').collect();
+fn req_query_to_map(query_string: String) -> HashMap<String, String> {
+    let query_map: HashMap<String, String> = match query_string.as_str() {
+        "" => HashMap::new(),
+        _ => {
+            let query_vec: Vec<&str> = query_string.split('&').collect();
 
-    let query_map: HashMap<&'a str, &'a str> = query_vec.iter().fold(HashMap::new(), |mut acc, query_element| {
-            let query_element_vec: Vec<&str> = query_element.split('=').collect();
-            let key = query_element_vec.get(0).unwrap();
-            let val = query_element_vec.get(1).unwrap();
-            acc.insert(key, val);
-            acc
+            query_vec.iter().fold(HashMap::new(), |mut acc, query_element| {
+                let query_element_vec: Vec<&str> = query_element.split('=').collect();
+                let key = query_element_vec.get(0).unwrap();
+                let val = query_element_vec.get(1).unwrap();
+                acc.insert(String::from(*key), String::from(*val));
+                acc
+            })
         }
-    );
-    
+    };
+
     query_map
 }
 
@@ -147,7 +137,6 @@ fn prepare_database() {
 
 fn main() {
     prepare_database();
-    // rocket::ignite().mount("/", routes![index, get_item, update_item, list_items]).launch();
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
