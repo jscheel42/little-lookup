@@ -132,7 +132,7 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
 
 fn prepare_database() {
     let connection = get_connection();
-    let _ = embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap()
 }
 
 fn main() {
