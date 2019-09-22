@@ -1,7 +1,7 @@
 # steps based on https://gist.github.com/jamesproud/4022da405709a633ba7f021a36d7b462
 
 ## BUILD IMAGE
-FROM ekidd/rust-musl-builder:nightly-2019-08-13 as cargo-build
+FROM ekidd/rust-musl-builder:stable as cargo-build
 
 ADD . ./
 
@@ -38,5 +38,7 @@ USER app
 WORKDIR /home/app
 
 COPY --from=cargo-build /home/rust/src/target/x86_64-unknown-linux-musl/release/little-lookup .
+
+EXPOSE 8088
 
 ENTRYPOINT ["/home/app/little-lookup"]
