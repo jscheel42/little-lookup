@@ -3,14 +3,14 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
-pub mod schema;
 pub mod models;
+pub mod schema;
 
-use actix_web::{web, App, HttpServer, HttpResponse, HttpRequest, Responder};
-use std::collections::HashMap;
+use self::models::{Item, NewItem};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
-use self::models::{Item, NewItem};
+use std::collections::HashMap;
 
 diesel_migrations::embed_migrations!();
 
@@ -18,7 +18,7 @@ pub fn get_connection() -> SqliteConnection {
     let key = "LITTLE_LOOKUP_DATABASE";
     let database_url = match std::env::var(key) {
         Ok(val) => val,
-        Err(_) => String::from("default.db")
+        Err(_) => String::from("default.db"),
     };
 
     SqliteConnection::establish(&database_url)
@@ -38,14 +38,15 @@ fn get_item(id: web::Path<(String)>) -> impl Responder {
 
     let connection = get_connection();
 
-    let results = items.filter(key.eq(id.as_str()))
+    let results = items
+        .filter(key.eq(id.as_str()))
         .limit(1)
         .load::<Item>(&connection)
         .expect("Error loading item");
 
     let body = match results.get(0) {
         Some(x) => String::from(x.val.clone()),
-        None    => String::from("Undefined")
+        None => String::from("Undefined"),
     };
 
     HttpResponse::Ok().body(body)
@@ -59,29 +60,31 @@ fn list_items(req: HttpRequest) -> impl Responder {
 
     let connection = get_connection();
 
-    let results =
-        match query_options_map.get("filter") {
-            Some(f) => {
-                let sql_filter = format!("%{}%", f);
-                items.filter(key.like(sql_filter)).load::<Item>(&connection).expect("Error loading items")
-            }
-            None => items.load::<Item>(&connection).expect("Error loading items")
-        };
+    let results = match query_options_map.get("filter") {
+        Some(f) => {
+            let sql_filter = format!("%{}%", f);
+            items
+                .filter(key.like(sql_filter))
+                .load::<Item>(&connection)
+                .expect("Error loading items")
+        }
+        None => items
+            .load::<Item>(&connection)
+            .expect("Error loading items"),
+    };
 
-    let delimiter =
-        match query_options_map.get("delim") {
-            Some(d) => d.as_str(),
-            None => " "
-        };
+    let delimiter = match query_options_map.get("delim") {
+        Some(d) => d.as_str(),
+        None => " ",
+    };
 
     let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
-            &acc.push_str(&result.key);
-            &acc.push_str(delimiter);
-            &acc.push_str(&result.val);
-            &acc.push_str("\n");
-            acc
-        }
-    );
+        &acc.push_str(&result.key);
+        &acc.push_str(delimiter);
+        &acc.push_str(&result.val);
+        &acc.push_str("\n");
+        acc
+    });
 
     HttpResponse::Ok().body(result_collection)
 }
@@ -96,7 +99,7 @@ fn update_item(info: web::Path<(String, String)>) -> impl Responder {
 
     let new_item = NewItem {
         key: id.as_str(),
-        val: value.as_str()
+        val: value.as_str(),
     };
 
     diesel::replace_into(items::table)
@@ -115,13 +118,15 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
         _ => {
             let query_vec: Vec<&str> = query_string.split('&').collect();
 
-            query_vec.iter().fold(HashMap::new(), |mut acc, query_element| {
-                let query_element_vec: Vec<&str> = query_element.split('=').collect();
-                let key = query_element_vec.get(0).unwrap();
-                let val = query_element_vec.get(1).unwrap();
-                acc.insert(String::from(*key), String::from(*val));
-                acc
-            })
+            query_vec
+                .iter()
+                .fold(HashMap::new(), |mut acc, query_element| {
+                    let query_element_vec: Vec<&str> = query_element.split('=').collect();
+                    let key = query_element_vec.get(0).unwrap();
+                    let val = query_element_vec.get(1).unwrap();
+                    acc.insert(String::from(*key), String::from(*val));
+                    acc
+                })
         }
     };
 
