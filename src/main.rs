@@ -29,7 +29,25 @@ fn index() -> impl Responder {
     let body = "Routes:
   /item/<key>: Get val for <key>
   /item/<key>/<val>: Update <val> for <key>
-  /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)";
+  /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
+  /delete/<key>: Delete <val> for <key>";
+    HttpResponse::Ok().body(body)
+}
+
+fn delete_item(id: web::Path<(String)>) -> impl Responder {
+    use self::schema::items::dsl::*;
+
+    let connection = get_connection();
+
+    let delete_count = diesel::delete(
+            items.filter(
+                key.eq(
+                    id.as_str()
+                )
+            )
+        ).execute(&connection).unwrap_or_default();
+
+    let body = String::from(format!("{} items deleted", delete_count));
     HttpResponse::Ok().body(body)
 }
 
@@ -143,6 +161,7 @@ fn main() {
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
+            .route("/delete/{id}", web::get().to(delete_item))
             .route("/item/{id}", web::get().to(get_item))
             .route("/item/{id}/{val}", web::get().to(update_item))
             .route("/list", web::get().to(list_items))
