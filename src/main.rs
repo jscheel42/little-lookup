@@ -14,6 +14,26 @@ use std::collections::HashMap;
 
 diesel_migrations::embed_migrations!();
 
+// Utility functions
+
+fn check_psk(query_options_map: &HashMap<String, String>) -> String {
+    let server_psk = get_psk();
+    if server_psk != String::from("") {
+        let client_psk = match query_options_map.get("psk") {
+            Some(psk) => String::from(psk),
+            None => String::from("")
+        };
+
+        if client_psk != server_psk {
+            match client_psk.as_str() {
+                "" => return String::from("PSK required"),
+                _ => return String::from("Incorrect PSK")
+            }
+        }
+    };
+    String::from("")
+}
+
 fn get_connection() -> SqliteConnection {
     let key = "LITTLE_LOOKUP_DATABASE";
     let database_url = match std::env::var(key) {
@@ -33,6 +53,34 @@ fn get_psk() -> String {
     }
 }
 
+fn prepare_database() {
+    let connection = get_connection();
+    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap()
+}
+
+fn req_query_to_map(query_string: String) -> HashMap<String, String> {
+    let query_map: HashMap<String, String> = match query_string.as_str() {
+        "" => HashMap::new(),
+        _ => {
+            let query_vec: Vec<&str> = query_string.split('&').collect();
+
+            query_vec
+                .iter()
+                .fold(HashMap::new(), |mut acc, query_element| {
+                    let query_element_vec: Vec<&str> = query_element.split('=').collect();
+                    let key = query_element_vec.get(0).unwrap();
+                    let val = query_element_vec.get(1).unwrap();
+                    acc.insert(String::from(*key), String::from(*val));
+                    acc
+                })
+        }
+    };
+
+    query_map
+}
+
+// Route handler functions
+
 fn index() -> impl Responder {
     let body = "Routes:
   /item/<key>: Get val for <key>
@@ -42,7 +90,15 @@ fn index() -> impl Responder {
     HttpResponse::Ok().body(body)
 }
 
-fn delete_item(id: web::Path<(String)>) -> impl Responder {
+fn delete_item(id: web::Path<(String)>, req: HttpRequest) -> impl Responder {
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let psk_result = check_psk(&query_options_map);
+    if psk_result.len() > 0 {
+        return HttpResponse::Unauthorized().body(psk_result)
+    };
+
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
@@ -59,7 +115,15 @@ fn delete_item(id: web::Path<(String)>) -> impl Responder {
     HttpResponse::Ok().body(body)
 }
 
-fn get_item(id: web::Path<(String)>) -> impl Responder {
+fn get_item(id: web::Path<(String)>, req: HttpRequest) -> impl Responder {
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let psk_result = check_psk(&query_options_map);
+    if psk_result.len() > 0 {
+        return HttpResponse::Unauthorized().body(psk_result)
+    };
+
     use self::schema::items::dsl::*;
 
     let connection = get_connection();
@@ -79,25 +143,15 @@ fn get_item(id: web::Path<(String)>) -> impl Responder {
 }
 
 fn list_items(req: HttpRequest) -> impl Responder {
-    use self::schema::items::dsl::*;
-
-    let query_options: String = req.query_string().to_string();
-    let query_options_map = req_query_to_map(query_options);
-
-    let server_psk = get_psk();
-    if server_psk != String::from("") {
-        let client_psk = match query_options_map.get("psk") {
-            Some(psk) => String::from(psk),
-            None => String::from("")
-        };
-
-        if client_psk != server_psk {
-            match client_psk.as_str() {
-                "" => return HttpResponse::Unauthorized().body("PSK required"),
-                _ => return HttpResponse::Unauthorized().body("Incorrect PSK")
-            }
-        }
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let psk_result = check_psk(&query_options_map);
+    if psk_result.len() > 0 {
+        return HttpResponse::Unauthorized().body(psk_result)
     };
+
+    use self::schema::items::dsl::*;
 
     let connection = get_connection();
 
@@ -130,7 +184,15 @@ fn list_items(req: HttpRequest) -> impl Responder {
     HttpResponse::Ok().body(result_collection)
 }
 
-fn update_item(info: web::Path<(String, String)>) -> impl Responder {
+fn update_item(info: web::Path<(String, String)>, req: HttpRequest) -> impl Responder {
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let psk_result = check_psk(&query_options_map);
+    if psk_result.len() > 0 {
+        return HttpResponse::Unauthorized().body(psk_result)
+    };
+
     use self::schema::items;
 
     let id = &info.0;
@@ -151,32 +213,6 @@ fn update_item(info: web::Path<(String, String)>) -> impl Responder {
     let body = format!("{}", value.as_str());
 
     HttpResponse::Ok().body(body)
-}
-
-fn req_query_to_map(query_string: String) -> HashMap<String, String> {
-    let query_map: HashMap<String, String> = match query_string.as_str() {
-        "" => HashMap::new(),
-        _ => {
-            let query_vec: Vec<&str> = query_string.split('&').collect();
-
-            query_vec
-                .iter()
-                .fold(HashMap::new(), |mut acc, query_element| {
-                    let query_element_vec: Vec<&str> = query_element.split('=').collect();
-                    let key = query_element_vec.get(0).unwrap();
-                    let val = query_element_vec.get(1).unwrap();
-                    acc.insert(String::from(*key), String::from(*val));
-                    acc
-                })
-        }
-    };
-
-    query_map
-}
-
-fn prepare_database() {
-    let connection = get_connection();
-    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap()
 }
 
 fn main() {
