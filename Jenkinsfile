@@ -32,4 +32,12 @@ spec:
             }
         }
     }
+    post {  
+        failure {  
+            emailext subject: "${env.JOB_NAME} build #${env.BUILD_NUMBER} failed",
+                body: "${env.BUILD_URL}",
+                replyTo: 'jscheel42@gmail.com',
+                to: 'jscheel42@gmail.com' 
+        }  
+    }  
 }
