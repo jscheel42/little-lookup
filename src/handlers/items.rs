@@ -1,17 +1,8 @@
-use crate::models::item::{Item, ItemList};
 use crate::db_connection::{ SLPool, SLPooledConnection };
-// use crate::schema::items::dsl::*;
+use crate::models::item::{Item, ItemList};
 
-// pub mod models;
-// pub mod schema;
-
-// use crate::models::item::Item;
 use actix_web::{web, HttpRequest, HttpResponse};
-// use diesel::prelude::*;
-// use diesel::sqlite::SqliteConnection;
 use std::collections::HashMap;
-
-// diesel_migrations::embed_migrations!();
 
 // Utility functions
 
@@ -66,7 +57,7 @@ fn sl_pool_handler(pool: web::Data<SLPool>) -> Result<SLPooledConnection, HttpRe
     pool
     .get()
     .map_err(|e| {
-        HttpResponse::InternalServerError().json(e.to_string())
+        HttpResponse::InternalServerError().body(e.to_string())
     })
 }
 

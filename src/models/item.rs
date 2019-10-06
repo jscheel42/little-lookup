@@ -1,7 +1,7 @@
-use crate::schema::items;
-// use crate::schema::items::columns::*;
-use diesel::sqlite::SqliteConnection;
 use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl, TextExpressionMethods}; 
+use crate::schema::items;
+
+use diesel::sqlite::SqliteConnection;
 
 pub struct ItemList(pub Vec<Item>);
 

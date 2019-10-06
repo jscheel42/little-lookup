@@ -1,27 +1,20 @@
 #[macro_use]
 extern crate diesel;
-// #[macro_use]
-// extern crate diesel_migrations;
-
-pub mod models;
-pub mod schema;
-pub mod db_connection;
-pub mod handlers;
-
+#[macro_use]
+extern crate diesel_migrations;
 extern crate actix;
 extern crate actix_web;
 extern crate futures;
 
+pub mod db_connection;
+pub mod handlers;
+pub mod models;
+pub mod schema;
+
 use actix_web::{App, HttpServer, web};
 use db_connection::establish_connection;
 
-// diesel_migrations::embed_migrations!();
-
-
 fn main() {
-    // prepare_database();
-    // let connection = get_connection();
-    
     HttpServer::new(|| {
         App::new()
             .data(establish_connection())
