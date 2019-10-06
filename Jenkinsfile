@@ -12,6 +12,13 @@ spec:
             requests:
                 cpu: 500m
                 memory: 1024Mi
+        volumeMounts:
+          - name: dockersock
+            mountPath: "/var/run/docker.sock"
+    volumes:  
+      - name: dockersock
+        hostPath:
+          path: /var/run/docker.sock
 """
 ) {
     node(POD_LABEL) {
