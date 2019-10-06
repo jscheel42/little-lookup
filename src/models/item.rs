@@ -19,16 +19,15 @@ pub struct NewItem<'a> {
 }
 
 impl ItemList {
-    pub fn list(connection: &SqliteConnection, sql_filter: String) -> Result<ItemList, diesel::result::Error> {
+    pub fn list(connection: &SqliteConnection, sql_filter: String) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key};
 
         let result = 
             items
                 .filter(key.like(sql_filter))
                 .load::<Item>(connection)?;
-                // .expect("Error loading items");
 
-        Ok(ItemList(result))
+        Ok(result)
     }
 }
 
@@ -52,7 +51,12 @@ impl Item {
         Ok(delete_count)
     }
 
-    pub fn replace_into(id: &str, new_item: &NewItem, connection: &SqliteConnection) -> Result<(), diesel::result::Error> {
+    pub fn replace_into(id: &str, value: &str, connection: &SqliteConnection) -> Result<(), diesel::result::Error> {
+        let new_item = NewItem {
+            key: id,
+            val: value,
+        };
+
         diesel::replace_into(items::table)
             .values(new_item)
             .execute(connection)

@@ -1,11 +1,11 @@
-use crate::models::item::ItemList;
+use crate::models::item::{Item, ItemList};
 use crate::db_connection::{ SLPool, SLPooledConnection };
 // use crate::schema::items::dsl::*;
 
 // pub mod models;
 // pub mod schema;
 
-use crate::models::item::{Item, NewItem};
+// use crate::models::item::Item;
 use actix_web::{web, HttpRequest, HttpResponse};
 // use diesel::prelude::*;
 // use diesel::sqlite::SqliteConnection;
@@ -94,11 +94,6 @@ pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SL
 
     let delete_count = Item::destroy(id.as_str(), &sl_pool).unwrap();
     Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
-
-    // match Item::destroy(id.as_str(), &sl_pool) {
-    //     Ok(delete_count) => Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count))),
-    //     Error => Err(HttpResponse::Unauthorized().body("Delete failed"))
-    // }
 }
 
 pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
@@ -111,13 +106,6 @@ pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPoo
     };
 
     let sl_pool = sl_pool_handler(pool)?;
-
-    // let body = match Item::find(id.as_str(), &sl_pool) {
-    //     Ok(item) => item.val,
-    //     _ => String::from("Undefined")
-    // };
-
-    // Ok(HttpResponse::Ok().body(body))
 
     match Item::find(id.as_str(), &sl_pool) {
         Ok(item) => Ok(HttpResponse::Ok().body(item.val)),
@@ -149,8 +137,7 @@ pub fn list_items(req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpRespo
         None => " ",
     };
 
-    // Not sure what 'results.0' is needed here instead of 'results'
-    let result_collection: String = results.0.iter().fold(String::from(""), |mut acc, result| {
+    let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
         &acc.push_str(&result.key);
         &acc.push_str(delimiter);
         &acc.push_str(&result.val);
@@ -173,16 +160,10 @@ pub fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: we
     let id = &info.0;
     let value = &info.1;
 
-    let new_item = NewItem {
-        key: id.as_str(),
-        val: &value.as_str(),
-    };
-
     let sl_pool = sl_pool_handler(pool)?;
 
-    Item::replace_into(id.as_str(), &new_item, &sl_pool).unwrap();
+    Item::replace_into(id.as_str(), value.as_str(), &sl_pool).unwrap();
 
-    // let body = String::from(&info.1);
     Ok(HttpResponse::Ok().body(
         String::from(&info.1)
     ))
