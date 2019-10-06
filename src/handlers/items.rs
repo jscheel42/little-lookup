@@ -6,12 +6,12 @@ use crate::db_connection::{ SLPool, SLPooledConnection };
 // pub mod schema;
 
 use crate::models::item::{Item, NewItem};
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse};
 // use diesel::prelude::*;
 // use diesel::sqlite::SqliteConnection;
 use std::collections::HashMap;
 
-diesel_migrations::embed_migrations!();
+// diesel_migrations::embed_migrations!();
 
 // Utility functions
 
@@ -72,16 +72,16 @@ fn sl_pool_handler(pool: web::Data<SLPool>) -> Result<SLPooledConnection, HttpRe
 
 // Route handler functions
 
-fn index() -> impl Responder {
+pub fn index() -> Result<HttpResponse, HttpResponse> {
     let body = "Routes:
   /item/<key>: Get val for <key>
   /item/<key>/<val>: Update <val> for <key>
   /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
   /delete/<key>: Delete <val> for <key>";
-    HttpResponse::Ok().body(body)
+    Ok(HttpResponse::Ok().body(body))
 }
 
-fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
+pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -92,72 +92,65 @@ fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool
 
     let sl_pool = sl_pool_handler(pool)?;
 
-    match Item::destroy(id.as_str(), &sl_pool) {
-        Ok(delete_count) => Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count))),
-        Error => Err(HttpResponse::Unauthorized().body("Delete failed"))
-    }
+    let delete_count = Item::destroy(id.as_str(), &sl_pool).unwrap();
+    Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
+
+    // match Item::destroy(id.as_str(), &sl_pool) {
+    //     Ok(delete_count) => Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count))),
+    //     Error => Err(HttpResponse::Unauthorized().body("Delete failed"))
+    // }
 }
 
-fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> impl Responder {
+pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let psk_result = check_psk(&query_options_map);
     if psk_result.len() > 0 {
-        return HttpResponse::Unauthorized().body(psk_result)
+        return Err(HttpResponse::Unauthorized().body(psk_result))
     };
 
     let sl_pool = sl_pool_handler(pool)?;
 
-    let body = match Item::find(id.as_str(), &sl_pool) {
-        Item(item) => item.val.as_str(),
-        Error => "Undefined"
-    }
-
-    // let results = items
-    //     .filter(key.eq(id.as_str()))
-    //     .limit(1)
-    //     .load::<Item>(&connection)
-    //     .expect("Error loading item");
-
-    // let body = match results.get(0) {
-    //     Some(x) => String::from(x.val.clone()),
-    //     None => String::from("Undefined"),
+    // let body = match Item::find(id.as_str(), &sl_pool) {
+    //     Ok(item) => item.val,
+    //     _ => String::from("Undefined")
     // };
 
-    HttpResponse::Ok().body(body)
+    // Ok(HttpResponse::Ok().body(body))
+
+    match Item::find(id.as_str(), &sl_pool) {
+        Ok(item) => Ok(HttpResponse::Ok().body(item.val)),
+        _ => Err(HttpResponse::NotFound().body("Undefined"))
+    }
 }
 
-fn list_items(req: HttpRequest) -> impl Responder {
+pub fn list_items(req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let psk_result = check_psk(&query_options_map);
     if psk_result.len() > 0 {
-        return HttpResponse::Unauthorized().body(psk_result)
+        return Err(HttpResponse::Unauthorized().body(psk_result))
     };
 
-    let connection = get_connection();
+    let sl_pool = sl_pool_handler(pool)?;
 
-    let results = match query_options_map.get("filter") {
-        Some(f) => {
-            let sql_filter = format!("%{}%", f);
-            items
-                .filter(key.like(sql_filter))
-                .load::<Item>(&connection)
-                .expect("Error loading items")
-        }
-        None => items
-            .load::<Item>(&connection)
-            .expect("Error loading items"),
-    };
+    let default_filter = String::from("");
+    let filter: String = query_options_map
+            .get("filter")
+            .unwrap_or_else(|| {&default_filter})
+            .to_string();
+
+    let results = ItemList::list(&sl_pool, filter).unwrap();
 
     let delimiter = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
         None => " ",
     };
 
-    let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
+    // Not sure what 'results.0' is needed here instead of 'results'
+    let result_collection: String = results.0.iter().fold(String::from(""), |mut acc, result| {
         &acc.push_str(&result.key);
         &acc.push_str(delimiter);
         &acc.push_str(&result.val);
@@ -165,36 +158,32 @@ fn list_items(req: HttpRequest) -> impl Responder {
         acc
     });
 
-    HttpResponse::Ok().body(result_collection)
+    Ok(HttpResponse::Ok().body(result_collection))
 }
 
-fn update_item(info: web::Path<(String, String)>, req: HttpRequest) -> impl Responder {
+pub fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let psk_result = check_psk(&query_options_map);
     if psk_result.len() > 0 {
-        return HttpResponse::Unauthorized().body(psk_result)
+        return Err(HttpResponse::Unauthorized().body(psk_result))
     };
-
-    use self::schema::items;
 
     let id = &info.0;
     let value = &info.1;
 
-    let connection = get_connection();
-
     let new_item = NewItem {
         key: id.as_str(),
-        val: value.as_str(),
+        val: &value.as_str(),
     };
 
-    diesel::replace_into(items::table)
-        .values(&new_item)
-        .execute(&connection)
-        .expect("Error creating new item");
+    let sl_pool = sl_pool_handler(pool)?;
 
-    let body = format!("{}", value.as_str());
+    Item::replace_into(id.as_str(), &new_item, &sl_pool).unwrap();
 
-    HttpResponse::Ok().body(body)
+    // let body = String::from(&info.1);
+    Ok(HttpResponse::Ok().body(
+        String::from(&info.1)
+    ))
 }

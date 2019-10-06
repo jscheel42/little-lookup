@@ -19,16 +19,16 @@ pub struct NewItem<'a> {
 }
 
 impl ItemList {
-    pub fn list(connection: &SqliteConnection, sql_filter: String) -> Self {
+    pub fn list(connection: &SqliteConnection, sql_filter: String) -> Result<ItemList, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key};
 
         let result = 
             items
                 .filter(key.like(sql_filter))
-                .load::<Item>(connection)
-                .expect("Error loading items");
+                .load::<Item>(connection)?;
+                // .expect("Error loading items");
 
-        ItemList(result)
+        Ok(ItemList(result))
     }
 }
 
