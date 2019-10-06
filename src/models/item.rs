@@ -1,6 +1,7 @@
 use crate::schema::items;
-use crate::schema::items::columns::*;
+// use crate::schema::items::columns::*;
 use diesel::sqlite::SqliteConnection;
+use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl, TextExpressionMethods}; 
 
 pub struct ItemList(pub Vec<Item>);
 
@@ -19,9 +20,7 @@ pub struct NewItem<'a> {
 
 impl ItemList {
     pub fn list(connection: &SqliteConnection, sql_filter: String) -> Self {
-        use diesel::RunQueryDsl;
-        use diesel::QueryDsl;
-        use crate::schema::items::dsl::*;
+        use crate::schema::items::dsl::{items, key};
 
         let result = 
             items
@@ -35,29 +34,25 @@ impl ItemList {
 
 impl Item {
     pub fn find(id: &str, connection: &SqliteConnection) -> Result<Item, diesel::result::Error> {
-        use diesel::QueryDsl;
-        use diesel::RunQueryDsl;
+        use crate::schema::items::dsl::{items, key};
 
-        items::table.filter(key.eq(id))
+        items.filter(key.eq(id))
             .first(connection)
     }
 
-    pub fn destroy(id: &str, connection: &SqliteConnection) -> Result<(), diesel::result::Error> {
-        use diesel::QueryDsl;
-        use diesel::RunQueryDsl;
-        use crate::schema::items::dsl;
+    pub fn destroy(id: &str, connection: &SqliteConnection) -> Result<usize, diesel::result::Error> {
+        use crate::schema::items::dsl::{items, key};
 
-        diesel::delete(dsl::items
-            .filter(key.eq(id))
-            .execute(connection))?;
-        Ok(())
+        let delete_count = diesel::delete(
+                items.filter(
+                    key.eq(id)
+                )
+            )
+            .execute(connection).unwrap_or_default();
+        Ok(delete_count)
     }
 
     pub fn replace_into(id: &str, new_item: &NewItem, connection: &SqliteConnection) -> Result<(), diesel::result::Error> {
-        // use diesel::QueryDsl;
-        use diesel::RunQueryDsl;
-        // use crate::schema::items::dsl;
-
         diesel::replace_into(items::table)
             .values(new_item)
             .execute(connection)

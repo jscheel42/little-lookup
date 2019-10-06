@@ -2,7 +2,7 @@ use diesel::sqlite::SqliteConnection;
 use diesel::r2d2::{ Pool, PooledConnection, ConnectionManager, PoolError };
 
 pub type SLPool = Pool<ConnectionManager<SqliteConnection>>;
-pub type SLConnection = PooledConnection<ConnectionManager<SqliteConnection>>;
+pub type SLPooledConnection = PooledConnection<ConnectionManager<SqliteConnection>>;
 
 fn init_pool(database_url: &str) -> Result<SLPool, PoolError> {
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);

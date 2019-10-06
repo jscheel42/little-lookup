@@ -1,6 +1,6 @@
 use crate::models::item::ItemList;
-use crate::db_connection::{ SLPool, SLConnection };
-use crate::schema::items::dsl::*;
+use crate::db_connection::{ SLPool, SLPooledConnection };
+// use crate::schema::items::dsl::*;
 
 // pub mod models;
 // pub mod schema;
@@ -62,7 +62,7 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
     query_map
 }
 
-fn sl_pool_handler(pool: web::Data<SLPool>) -> Result<SLPool, HttpResponse> {
+fn sl_pool_handler(pool: web::Data<SLPool>) -> Result<SLPooledConnection, HttpResponse> {
     pool
     .get()
     .map_err(|e| {
@@ -81,20 +81,20 @@ fn index() -> impl Responder {
     HttpResponse::Ok().body(body)
 }
 
-fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> impl Responder {
+fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let psk_result = check_psk(&query_options_map);
     if psk_result.len() > 0 {
-        return HttpResponse::Unauthorized().body(psk_result)
+        return Err(HttpResponse::Unauthorized().body(psk_result))
     };
 
     let sl_pool = sl_pool_handler(pool)?;
 
     match Item::destroy(id.as_str(), &sl_pool) {
-        Ok() => HttpResponse::Ok().body(format!("{} deleted", id))
-        Err => HttpResponse::Unauthorized().body("Delete failed")
+        Ok(delete_count) => Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count))),
+        Error => Err(HttpResponse::Unauthorized().body("Delete failed"))
     }
 }
 
