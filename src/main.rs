@@ -14,7 +14,7 @@ use std::collections::HashMap;
 
 diesel_migrations::embed_migrations!();
 
-pub fn get_connection() -> SqliteConnection {
+fn get_connection() -> SqliteConnection {
     let key = "LITTLE_LOOKUP_DATABASE";
     let database_url = match std::env::var(key) {
         Ok(val) => val,
@@ -23,6 +23,14 @@ pub fn get_connection() -> SqliteConnection {
 
     SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
+}
+
+fn get_psk() -> String {
+    let key = "LITTLE_LOOKUP_PSK";
+    match std::env::var(key) {
+        Ok(val) => val,
+        Err(_) => String::from("")
+    }
 }
 
 fn index() -> impl Responder {
@@ -75,6 +83,21 @@ fn list_items(req: HttpRequest) -> impl Responder {
 
     let query_options: String = req.query_string().to_string();
     let query_options_map = req_query_to_map(query_options);
+
+    let server_psk = get_psk();
+    if server_psk != String::from("") {
+        let client_psk = match query_options_map.get("psk") {
+            Some(psk) => String::from(psk),
+            None => String::from("")
+        };
+
+        if client_psk != server_psk {
+            match client_psk.as_str() {
+                "" => return HttpResponse::Unauthorized().body("PSK required"),
+                _ => return HttpResponse::Unauthorized().body("Incorrect PSK")
+            }
+        }
+    };
 
     let connection = get_connection();
 
