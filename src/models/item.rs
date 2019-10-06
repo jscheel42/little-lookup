@@ -22,9 +22,10 @@ impl ItemList {
     pub fn list(connection: &SqliteConnection, sql_filter: String) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key};
 
+        let f = format!("%{}%", sql_filter);
         let result = 
             items
-                .filter(key.like(sql_filter))
+                .filter(key.like(f))
                 .load::<Item>(connection)?;
 
         Ok(result)
