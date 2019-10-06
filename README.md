@@ -18,9 +18,21 @@ cargo build --release
 
 ### Configure
 
+#### Database
 Set the location for the sqlite database
 ```
 export LITTLE_LOOKUP_DATABASE=/your/chosen/path.db
+```
+
+#### PSK
+Set the PSK if you want one
+```
+export LITTLE_LOOKUP_PSK="your-psk-here"
+```
+You will need to include the PSK in your requests, e.g.
+```
+?psk=your-psk-here
+localhost:8088/item/foo?psk=your-psk-here
 ```
 
 ### Run
@@ -35,27 +47,32 @@ export LITTLE_LOOKUP_DATABASE=/your/chosen/path.db
 
 Set key (foo) to value (bar)
 ```
-localhost:8000/item/foo/bar
+localhost:8088/item/foo/bar
 ```
 
 ### Get value(s)
 
 Retrieve value for key (foo)
 ```
-localhost:8000/item/foo
+localhost:8088/item/foo
 ```
 
 Retrieve values for all keys
 ```
-localhost:8000/list
+localhost:8088/list
 ```
 
 Retrieve values for all keys that match filter (sql like '%X%')
 ```
-localhost:8000/list?filter=<x>
+localhost:8088/list?filter=<x>
 ```
 
 Retrieve values for all keys with custom delimiter <y>
 ```
-localhost:8000/list?delim=<y>
+localhost:8088/list?delim=<y>
+```
+
+Delete value for key (foo)
+```
+localhost:8088/delete/foo
 ```
