@@ -13,7 +13,9 @@ RUN apt-get install -y \
         libsqlite3-dev \
         sqlite \
         sqlite3
+
 RUN cargo build --release
+RUN chown 1000:1000 /usr/local/src/target/release/little-lookup
 
 
 ## FINAL IMAGE
@@ -29,11 +31,8 @@ ENV LITTLE_LOOKUP_DATABASE /data/default.db
 WORKDIR /home/app
 
 COPY --from=cargo-build /usr/local/src/target/release/little-lookup .
-RUN chown app:app -R /home/app
 USER app
 
 EXPOSE 8088
-
-RUN ls -lha /home/app/little-lookup
 
 ENTRYPOINT ["/home/app/little-lookup"]
