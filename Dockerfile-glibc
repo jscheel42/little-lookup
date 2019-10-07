@@ -34,4 +34,6 @@ USER app
 
 EXPOSE 8088
 
+RUN ls -lha /home/app/little-lookup
+
 ENTRYPOINT ["/home/app/little-lookup"]

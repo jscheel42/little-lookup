@@ -3,7 +3,7 @@ set -e
 
 docker build -f Dockerfile-glibc -t jscheel42/little-lookup:glibc --no-cache --pull .
 docker build -f Dockerfile-musl -t jscheel42/little-lookup:musl --no-cache --pull .
-docker tag jscheel42/little-lookup:glibc jscheel42/little-lookup:latest
+docker tag jscheel42/little-lookup:musl jscheel42/little-lookup:latest
 
 if [ "$1" == "push" ]
 then
