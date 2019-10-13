@@ -12,6 +12,7 @@ pub fn establish_connection() -> Pool {
         Ok(val) => val,
         Err(_) => String::from("default.db"),
     };
+
     let sql_pool = init_pool(&database_url).expect("Failed to create pool");
     let sql_pooled_connection = sql_pool_handler(&sql_pool).unwrap();
     prepare_database(&sql_pooled_connection);
@@ -19,8 +20,14 @@ pub fn establish_connection() -> Pool {
 }
 
 fn init_pool(database_url: &str) -> Result<Pool, PoolError> {
+    let pool_size_key = "LITTLE_LOOKUP_POOL_SIZE_PER_WORKER";
+    let pool_size_num = match std::env::var(pool_size_key) {
+        Ok(val) => val.parse::<u32>().unwrap(),
+        Err(_) => 5
+    };
+
     let manager = ConnectionManager::<PgConnection>::new(database_url);
-    Pool::builder().max_size(5).build(manager)
+    Pool::builder().max_size(pool_size_num).build(manager)
 }
 
 fn prepare_database(connection: &PgConnection) {

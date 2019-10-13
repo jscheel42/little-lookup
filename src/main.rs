@@ -12,9 +12,15 @@ pub mod models;
 pub mod schema;
 
 use actix_web::{App, HttpServer, web};
-use db_connection::establish_connection;
+use db_connection::{establish_connection};
 
 fn main() {
+    let worker_key = "LITTLE_LOOKUP_WORKER_NUM";
+    let worker_num = match std::env::var(worker_key) {
+        Ok(val) => val.parse::<usize>().unwrap(),
+        Err(_) => 2
+    };
+
     HttpServer::new(|| {
         App::new()
             .data(establish_connection())
@@ -39,6 +45,7 @@ fn main() {
                     .route(web::get().to_async(handlers::items::list_items))
             )
     })
+    .workers(worker_num)
     .bind("0.0.0.0:8088")
     .unwrap()
     .run()
