@@ -6,7 +6,6 @@ docker tag jscheel42/little-lookup:alpine jscheel42/little-lookup:latest
 
 if [ "$1" == "push" ]
 then
-    docker push jscheel42/little-lookup:alpine
     docker push jscheel42/little-lookup:latest
 fi
 
