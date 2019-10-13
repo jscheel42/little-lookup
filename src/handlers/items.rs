@@ -1,8 +1,9 @@
-use crate::db_connection::{ Pool, PooledConnection };
-use crate::models::item::{Item, ItemList};
-
 use actix_web::{web, HttpRequest, HttpResponse};
 use std::collections::HashMap;
+
+use crate::db_connection::{Pool, PooledConnection};
+use crate::models::item::{Item, ItemList};
+use crate::util::{get_psk};
 
 // Utility functions
 
@@ -22,14 +23,6 @@ fn check_psk(query_options_map: &HashMap<String, String>) -> String {
         }
     };
     String::from("")
-}
-
-fn get_psk() -> String {
-    let key = "LITTLE_LOOKUP_PSK";
-    match std::env::var(key) {
-        Ok(val) => val,
-        Err(_) => String::from("")
-    }
 }
 
 fn req_query_to_map(query_string: String) -> HashMap<String, String> {
