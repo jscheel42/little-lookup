@@ -28,12 +28,14 @@ RUN adduser -D -s /bin/sh -u 1000 -G app app
 RUN mkdir /data
 RUN chown app:app /data
 
-ENV LITTLE_LOOKUP_DATABASE /data/default.db
+ENV LITTLE_LOOKUP_DATABASE postgres://docker:docker@localhost:5432/little-lookup
 
 WORKDIR /home/app
 
 COPY --from=cargo-build /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup .
 USER app
+
+RUN ln -s /pgpass/.pgpass .pgpass
 
 EXPOSE 8088
 
