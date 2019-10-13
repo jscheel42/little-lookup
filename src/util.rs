@@ -2,7 +2,7 @@ pub fn get_database() -> String {
     let key = "LITTLE_LOOKUP_DATABASE";
     match std::env::var(key) {
         Ok(val) => val,
-        Err(_) => String::from("default.db"),
+        Err(_) => String::from("postgres://docker:docker@localhost:5432/little-lookup"),
     }
 }
 
