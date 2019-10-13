@@ -4,6 +4,7 @@ extern crate diesel;
 extern crate diesel_migrations;
 extern crate actix;
 extern crate actix_web;
+extern crate dotenv;
 extern crate futures;
 
 pub mod db_connection;
@@ -15,6 +16,8 @@ use actix_web::{App, HttpServer, web};
 use db_connection::{establish_connection};
 
 fn main() {
+    dotenv::dotenv().unwrap_or_default();
+
     let worker_key = "LITTLE_LOOKUP_WORKER_NUM";
     let worker_num = match std::env::var(worker_key) {
         Ok(val) => val.parse::<usize>().unwrap(),
