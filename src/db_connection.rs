@@ -12,10 +12,10 @@ pub fn establish_connection() -> Pool {
         Ok(val) => val,
         Err(_) => String::from("default.db"),
     };
-    let sl_pool = init_pool(&database_url).expect("Failed to create pool");
-    let sl_pooled_connection = sl_pool_handler(&sl_pool).unwrap();
-    prepare_database(&sl_pooled_connection);
-    sl_pool
+    let sql_pool = init_pool(&database_url).expect("Failed to create pool");
+    let sql_pooled_connection = sql_pool_handler(&sql_pool).unwrap();
+    prepare_database(&sql_pooled_connection);
+    sql_pool
 }
 
 fn init_pool(database_url: &str) -> Result<Pool, PoolError> {
@@ -27,7 +27,7 @@ fn prepare_database(connection: &PgConnection) {
     embedded_migrations::run_with_output(connection, &mut std::io::stdout()).unwrap()
 }
 
-fn sl_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
-    let sl_pool = pool.get().unwrap();
-    Ok(sl_pool)
+fn sql_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
+    let sql_pool = pool.get().unwrap();
+    Ok(sql_pool)
 }
