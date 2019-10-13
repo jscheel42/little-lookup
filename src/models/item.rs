@@ -53,24 +53,11 @@ impl Item {
     }
 
     pub fn replace_into(id: &str, value: &str, connection: &PgConnection) -> Result<(), diesel::result::Error> {
-        // let new_item = NewItem {
-        //     key: id,
-        //     val: value,
-        // };
-
         let q = format!("INSERT INTO items(key, val) VALUES ('{0}', '{1}') 
                         ON CONFLICT ON CONSTRAINT items_pkey
                         DO UPDATE SET val = '{1}';",
                         id, value);
         diesel::sql_query(q).execute(connection)?;
-
-        // diesel::insert_into(items::table)
-        //     .values(&new_item)
-        //     .on_conflict(id)
-        //     .do_update()
-        //     .set(&new_item)
-        //     .execute(connection)
-        //     .expect("Error creating new item");
         Ok(())
     }
 }
