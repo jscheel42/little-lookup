@@ -1,6 +1,9 @@
 # steps based on https://gist.github.com/jamesproud/4022da405709a633ba7f021a36d7b462
 
+##
 ## BUILD IMAGE
+##
+
 FROM ekidd/rust-musl-builder:stable as cargo-build
 
 WORKDIR /usr/local/src
@@ -9,22 +12,13 @@ ADD . ./
 
 RUN sudo chown -R rust:rust .
 
-RUN sudo apt-get update
-RUN sudo apt-get install -y \
-        libsqlite-dev \
-        libsqlite3-dev \
-        musl-tools \
-        sqlite \
-        sqlite3
-# RUN rustup target add x86_64-unknown-linux-musl
-
 RUN cargo build --release
 RUN chown 1000:1000 /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup
 
-# Compile command from previous image (rustlang/rust) which had problems compiling diesel w/ musl (alpine linux)
-# RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
-
+##
 ## FINAL IMAGE
+##
+
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates

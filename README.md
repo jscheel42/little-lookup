@@ -12,6 +12,10 @@ Helm chart available at: https://github.com/jscheel42/helm-charts/tree/master/li
 
 ### Compile
 
+Ubuntu 18.04 packages required
+* libssl-dev
+* pkg-config
+
 ```
 cargo build --release
 ```
