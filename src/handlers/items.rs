@@ -1,4 +1,4 @@
-use crate::db_connection::{ SLPool, SLPooledConnection };
+use crate::db_connection::{ Pool, PooledConnection };
 use crate::models::item::{Item, ItemList};
 
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -53,7 +53,7 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
     query_map
 }
 
-fn sl_pool_handler(pool: web::Data<SLPool>) -> Result<SLPooledConnection, HttpResponse> {
+fn sl_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpResponse> {
     pool
     .get()
     .map_err(|e| {
@@ -72,7 +72,7 @@ pub fn index() -> Result<HttpResponse, HttpResponse> {
     Ok(HttpResponse::Ok().body(body))
 }
 
-pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
+pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -87,7 +87,7 @@ pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SL
     Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
 }
 
-pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
+pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -104,7 +104,7 @@ pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<SLPoo
     }
 }
 
-pub fn list_items(req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
+pub fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -139,7 +139,7 @@ pub fn list_items(req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpRespo
     Ok(HttpResponse::Ok().body(result_collection))
 }
 
-pub fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<SLPool>) -> Result<HttpResponse, HttpResponse> {
+pub fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
