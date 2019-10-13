@@ -35,8 +35,6 @@ WORKDIR /home/app
 COPY --from=cargo-build /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup .
 USER app
 
-RUN ln -s /pgpass/.pgpass .pgpass
-
 EXPOSE 8088
 
 ENTRYPOINT ["/home/app/little-lookup"]
