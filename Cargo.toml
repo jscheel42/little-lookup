@@ -9,10 +9,9 @@ edition = "2018"
 [dependencies]
 actix = "0.8"
 actix-web = "1.0.8"
-diesel = { version = "1.4.2", features = [ "r2d2", "sqlite" ] }
+diesel = { version = "1.4.3", features = [ "r2d2", "postgres" ] }
 diesel_migrations = "1.4.0"
+dotenv = "0.14.1"
 futures = "0.1"
-# dotenv = "0.14.1"
-
-# Needed for sqlite.
-libsqlite3-sys = { version = "*", features = ["bundled"] }
+openssl = "*" # Needed for postgres
+openssl-probe = "0.1.2"
