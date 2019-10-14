@@ -34,7 +34,8 @@ WORKDIR /home/app
 
 COPY --from=cargo-build /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup .
 USER app
+ADD docker-entrypoint.sh .
 
 EXPOSE 8088
 
-ENTRYPOINT ["/home/app/little-lookup"]
+ENTRYPOINT ["/home/app/docker-entrypoint.sh"]
