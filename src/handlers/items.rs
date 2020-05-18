@@ -56,7 +56,7 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpRespo
 
 // Route handler functions
 
-pub fn index() -> Result<HttpResponse, HttpResponse> {
+pub async fn index() -> Result<HttpResponse, HttpResponse> {
     let body = "Routes:
   /item/<key>: Get val for <key>
   /item/<key>/<val>: Update <val> for <key>
@@ -65,7 +65,7 @@ pub fn index() -> Result<HttpResponse, HttpResponse> {
     Ok(HttpResponse::Ok().body(body))
 }
 
-pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -80,7 +80,7 @@ pub fn delete_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Po
     Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
 }
 
-pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -97,7 +97,7 @@ pub fn get_item(id: web::Path<(String)>, req: HttpRequest, pool: web::Data<Pool>
     }
 }
 
-pub fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -132,7 +132,7 @@ pub fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRespons
     Ok(HttpResponse::Ok().body(result_collection))
 }
 
-pub fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
