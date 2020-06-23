@@ -7,7 +7,6 @@ extern crate diesel_migrations;
 extern crate actix;
 extern crate actix_web;
 extern crate dotenv;
-extern crate futures;
 extern crate openssl_probe;
 
 pub mod db_connection;
