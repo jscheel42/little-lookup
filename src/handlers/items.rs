@@ -132,7 +132,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
     Ok(HttpResponse::Ok().body(result_collection))
 }
 
-pub async fn update_item(info: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn update_item(web::Path((id, val)): web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
@@ -141,14 +141,10 @@ pub async fn update_item(info: web::Path<(String, String)>, req: HttpRequest, po
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
 
-    let id = &info.0;
-    let value = &info.1;
-
     let sql_pool = sql_pool_handler(pool)?;
-
-    Item::replace_into(id.as_str(), value.as_str(), &sql_pool).unwrap();
+    Item::replace_into(id.as_str(), val.as_str(), &sql_pool).unwrap();
 
     Ok(HttpResponse::Ok().body(
-        String::from(&info.1)
+        val
     ))
 }

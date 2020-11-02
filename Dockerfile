@@ -8,9 +8,15 @@ FROM ekidd/rust-musl-builder:stable as cargo-build
 
 WORKDIR /usr/local/src
 
-ADD . ./
+ADD src ./src
+ADD migrations ./migrations
+ADD Cargo.toml ./
+ADD Cargo.lock ./
+ADD diesel.toml ./
+ADD docker-entrypoint.sh ./
 
 RUN sudo chown -R rust:rust .
+RUN ls -lha .
 
 RUN cargo build --release
 RUN chown 1000:1000 /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup
