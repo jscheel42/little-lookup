@@ -17,11 +17,12 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
-      - name: Login to DockerHub
+      - name: Login to DockerHub123
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          logout: true
 
       - name: Push to Docker Hub
         uses: docker/build-push-action@v2
