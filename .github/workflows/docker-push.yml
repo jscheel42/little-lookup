@@ -32,4 +32,4 @@ jobs:
           push: true
           tags: |
             jscheel42/little-lookup:latest
-            jscheel42/little-lookup:${{ VERSION }}
+            jscheel42/little-lookup:${{ env.VERSION }}
