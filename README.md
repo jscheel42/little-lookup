@@ -24,20 +24,22 @@ cargo build --release
 ### Configure
 
 #### Database
-Set the location for the sqlite database
+Set the location for the postgres database
 ```
-export LITTLE_LOOKUP_DATABASE=/your/chosen/path.db
+export LITTLE_LOOKUP_DATABASE=postgres://docker:docker@localhost:5432/little-lookup
 ```
 
 #### PSK
-Set the PSK if you want one
+Set the read and/or write PSK if wanted
 ```
-export LITTLE_LOOKUP_PSK="your-psk-here"
+export LITTLE_LOOKUP_PSK_READ="read-psk-here"
+export LITTLE_LOOKUP_PSK_WRITE="write-psk-here"
 ```
 You will need to include the PSK in your requests, e.g.
 ```
-?psk=your-psk-here
-localhost:8088/item/foo?psk=your-psk-here
+?psk=read-psk-here
+localhost:8088/get/foo?psk=read-psk-here
+localhost:8088/update/foo/bar?psk=write-psk-here
 ```
 
 ### Run
@@ -52,14 +54,14 @@ localhost:8088/item/foo?psk=your-psk-here
 
 Set key (foo) to value (bar)
 ```
-localhost:8088/item/foo/bar
+localhost:8088/update/foo/bar
 ```
 
 ### Get value(s)
 
 Retrieve value for key (foo)
 ```
-localhost:8088/item/foo
+localhost:8088/get/foo
 ```
 
 Retrieve values for all keys

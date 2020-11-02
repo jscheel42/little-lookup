@@ -14,8 +14,17 @@ pub fn get_pool_size_per_worker() -> u32 {
     }
 }
 
-pub fn get_psk() -> String {
-    let key = "LITTLE_LOOKUP_PSK";
+pub enum PSKType {
+    READ,
+    WRITE
+} 
+
+pub fn get_psk(psk_type: PSKType) -> String {
+    let key = match psk_type {
+        PSKType::READ  => "LITTLE_LOOKUP_PSK_READ",
+        PSKType::WRITE => "LITTLE_LOOKUP_PSK_WRITE"
+    };
+
     match std::env::var(key) {
         Ok(val) => val,
         Err(_) => String::from("")

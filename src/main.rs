@@ -36,11 +36,11 @@ async fn main() -> std::io::Result<()> {
                     .route(web::get().to(handlers::items::delete_item))
             )
             .service(
-                web::resource("/item/{id}")
+                web::resource("/get/{id}")
                     .route(web::get().to(handlers::items::get_item))
             )
             .service(
-                web::resource("/item/{id}/{val}")
+                web::resource("/update/{id}/{val}")
                     .route(web::get().to(handlers::items::update_item))
             )
             .service(

@@ -3,12 +3,12 @@ use std::collections::HashMap;
 
 use crate::db_connection::{Pool, PooledConnection};
 use crate::models::item::{Item, ItemList};
-use crate::util::{get_psk};
+use crate::util::{get_psk, PSKType};
 
 // Utility functions
 
-fn check_psk(query_options_map: &HashMap<String, String>) -> String {
-    let server_psk = get_psk();
+fn check_psk(query_options_map: &HashMap<String, String>, psk_type: PSKType) -> String {
+    let server_psk = get_psk(psk_type);
     if server_psk != String::from("") {
         let client_psk = match query_options_map.get("psk") {
             Some(psk) => String::from(psk),
@@ -58,8 +58,8 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpRespo
 
 pub async fn index() -> Result<HttpResponse, HttpResponse> {
     let body = "Routes:
-  /item/<key>: Get val for <key>
-  /item/<key>/<val>: Update <val> for <key>
+  /get/<key>: Get val for <key>
+  /update/<key>/<val>: Update <val> for <key>
   /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
   /delete/<key>: Delete <val> for <key>";
     Ok(HttpResponse::Ok().body(body))
@@ -69,7 +69,7 @@ pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Dat
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
-    let psk_result = check_psk(&query_options_map);
+    let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
@@ -84,7 +84,7 @@ pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<P
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
-    let psk_result = check_psk(&query_options_map);
+    let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
@@ -101,7 +101,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
-    let psk_result = check_psk(&query_options_map);
+    let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
@@ -136,7 +136,7 @@ pub async fn update_item(info: web::Path<(String, String)>, req: HttpRequest, po
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
-    let psk_result = check_psk(&query_options_map);
+    let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
