@@ -9,7 +9,7 @@ services:
     ports: 
       - 8088:8088
   postgres:
-    image: postgres:12
+    image: postgres:13
     environment:
       - POSTGRES_PASSWORD=docker
       - POSTGRES_USER=docker
