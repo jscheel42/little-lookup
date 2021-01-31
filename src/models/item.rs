@@ -1,5 +1,6 @@
-use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl, TextExpressionMethods}; 
+use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl, TextExpressionMethods};
 use crate::schema::items;
+use chrono::{DateTime, Utc};
 
 use diesel::pg::PgConnection;
 
@@ -9,6 +10,7 @@ pub struct ItemList(pub Vec<Item>);
 pub struct Item {
     pub key: String,
     pub val: String,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Insertable)]
@@ -16,16 +18,19 @@ pub struct Item {
 pub struct NewItem<'a> {
     pub key: &'a str,
     pub val: &'a str,
+    pub updated_at: &'a DateTime<Utc>,
 }
 
 impl ItemList {
     pub fn list(connection: &PgConnection, sql_filter: String) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
-        use crate::schema::items::dsl::{items, key};
+        use crate::schema::items::dsl::{items, key, updated_at};
 
         let f = format!("%{}%", sql_filter);
         let result = 
             items
                 .filter(key.like(f))
+                .order_by((key, updated_at.desc()))
+                .distinct_on(key)
                 .load::<Item>(connection)?;
 
         Ok(result)
@@ -34,9 +39,10 @@ impl ItemList {
 
 impl Item {
     pub fn find(id: &str, connection: &PgConnection) -> Result<Item, diesel::result::Error> {
-        use crate::schema::items::dsl::{items, key};
+        use crate::schema::items::dsl::{items, key, updated_at};
 
         items.filter(key.eq(id))
+            .order_by(updated_at.desc())
             .first(connection)
     }
 
@@ -54,7 +60,7 @@ impl Item {
 
     pub fn replace_into(id: &str, value: &str, connection: &PgConnection) -> Result<(), diesel::result::Error> {
         let q = format!("INSERT INTO items(key, val) VALUES ('{0}', '{1}') 
-                        ON CONFLICT ON CONSTRAINT items_pkey
+                        ON CONFLICT (key, val)
                         DO UPDATE SET val = '{1}';",
                         id, value);
         diesel::sql_query(q).execute(connection)?;
