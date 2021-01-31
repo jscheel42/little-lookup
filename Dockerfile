@@ -4,9 +4,16 @@
 ## BUILD IMAGE
 ##
 
-FROM ekidd/rust-musl-builder:stable as cargo-build
+FROM rust:1-slim-buster as cargo-build
 
 WORKDIR /usr/local/src
+
+RUN apt-get update &&\
+        apt-get install -y \
+            libpq-dev \
+            libssl-dev \
+            pkg-config &&\
+        rm -rf /var/lib/apt/lists/*
 
 ADD src ./src
 ADD migrations ./migrations
@@ -15,22 +22,23 @@ ADD Cargo.lock ./
 ADD diesel.toml ./
 ADD docker-entrypoint.sh ./
 
-RUN sudo chown -R rust:rust .
-RUN ls -lha .
-
 RUN cargo build --release
-RUN chown 1000:1000 /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup
+RUN chown 1000:1000 /usr/local/src/target/release/little-lookup
 
 ##
 ## FINAL IMAGE
 ##
 
-FROM alpine:latest
+FROM debian:buster-slim
 
-RUN apk --no-cache add ca-certificates
+RUN apt-get update &&\
+        apt-get install -y \
+            ca-certificates \
+            libpq5 &&\
+        rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -g 1000 app
-RUN adduser -D -s /bin/sh -u 1000 -G app app
+RUN addgroup -gid 1000 app
+RUN adduser --disabled-password --shell /bin/bash --uid 1000 --ingroup app app
 RUN mkdir /data
 RUN chown app:app /data
 
@@ -38,7 +46,7 @@ ENV LITTLE_LOOKUP_DATABASE postgres://docker:docker@localhost:5432/little-lookup
 
 WORKDIR /home/app
 
-COPY --from=cargo-build /usr/local/src/target/x86_64-unknown-linux-musl/release/little-lookup .
+COPY --from=cargo-build /usr/local/src/target/release/little-lookup .
 USER app
 ADD docker-entrypoint.sh .
 
