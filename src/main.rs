@@ -40,6 +40,10 @@ async fn main() -> std::io::Result<()> {
                     .route(web::get().to(handlers::items::get_item))
             )
             .service(
+                web::resource("/history/{id}")
+                    .route(web::get().to(handlers::items::history_item))
+            )
+            .service(
                 web::resource("/update/{id}/{val}")
                     .route(web::get().to(handlers::items::update_item))
             )

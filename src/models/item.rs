@@ -45,6 +45,14 @@ impl Item {
             .order_by(updated_at.desc())
             .first(connection)
     }
+    
+    pub fn history(id: &str, connection: &PgConnection) -> Result<Vec<Item>, diesel::result::Error> {
+        use crate::schema::items::dsl::{items, key, updated_at};
+
+        items.filter(key.eq(id))
+            .order_by(updated_at.desc())
+            .get_results(connection)
+    }
 
     pub fn destroy(id: &str, connection: &PgConnection) -> Result<usize, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key};
@@ -59,9 +67,7 @@ impl Item {
     }
 
     pub fn replace_into(id: &str, value: &str, connection: &PgConnection) -> Result<(), diesel::result::Error> {
-        let q = format!("INSERT INTO items(key, val) VALUES ('{0}', '{1}') 
-                        ON CONFLICT (key, val)
-                        DO UPDATE SET val = '{1}';",
+        let q = format!("INSERT INTO items(key, val) VALUES ('{0}', '{1}')",
                         id, value);
         diesel::sql_query(q).execute(connection)?;
         Ok(())

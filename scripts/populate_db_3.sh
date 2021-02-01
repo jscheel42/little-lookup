@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
-LL_HOSTNAME=http://kube01.homenet:30008
+LL_HOSTNAME=http://localhost:8088
 
 date
 
-for i in $(seq 2000001 3000000)
+for i in $(seq -f %1.0f 2000001 3000000)
 do
-    curl ${LL_HOSTNAME}/item/key${i}/var${i}
+    curl ${LL_HOSTNAME}/update/key${i}/var${i}
 done
 
 date

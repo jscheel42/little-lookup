@@ -97,6 +97,31 @@ pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<P
     }
 }
 
+pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let psk_result = check_psk(&query_options_map, PSKType::READ);
+    if psk_result.len() > 0 {
+        return Err(HttpResponse::Unauthorized().body(psk_result))
+    };
+
+    let sql_pool = sql_pool_handler(pool)?;
+
+    match Item::history(id.as_str(), &sql_pool) {
+        Ok(item_list) => {
+            let mut val_list: Vec<String> = Vec::new();
+            for item in item_list.iter() {
+                val_list.push(item.val.clone())
+            }
+            Ok(HttpResponse::Ok().body(
+                val_list.join("\n")
+            ))
+        },
+        _ => Err(HttpResponse::NotFound().body("Undefined"))
+    }
+}
+
 pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
