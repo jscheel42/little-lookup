@@ -64,6 +64,11 @@ Retrieve value for key (foo)
 localhost:8088/get/foo
 ```
 
+Retrieve history of values for key (foo)
+```
+localhost:8088/history/foo
+```
+
 Retrieve values for all keys
 ```
 localhost:8088/list
