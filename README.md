@@ -42,6 +42,15 @@ localhost:8088/get/foo?psk=read-psk-here
 localhost:8088/update/foo/bar?psk=write-psk-here
 ```
 
+### Namespace
+Namespace support is available for all commands via "ns" or "namespace" settings
+```
+?ns=bar
+?namespace=bar
+localhost:8088/get/foo?ns=bar
+localhost:8088/get/foo?namespace=bar
+```
+
 ### Run
 
 ```
