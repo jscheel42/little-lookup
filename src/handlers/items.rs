@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::db_connection::{Pool, PooledConnection};
 use crate::models::item::{Item, ItemList};
-use crate::util::{get_psk, PSKType};
+use crate::util::{get_namespace, get_psk, PSKType};
 
 // Utility functions
 
@@ -69,6 +69,7 @@ pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Dat
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
+    let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
@@ -76,7 +77,7 @@ pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Dat
 
     let sql_pool = sql_pool_handler(pool)?;
 
-    let delete_count = Item::destroy(id.as_str(), &sql_pool).unwrap();
+    let delete_count = Item::destroy(id.as_str(), namespace, &sql_pool).unwrap();
     Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
 }
 
@@ -84,6 +85,7 @@ pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<P
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
+    let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
@@ -91,7 +93,7 @@ pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<P
 
     let sql_pool = sql_pool_handler(pool)?;
 
-    match Item::find(id.as_str(), &sql_pool) {
+    match Item::find(id.as_str(), namespace, &sql_pool) {
         Ok(item) => Ok(HttpResponse::Ok().body(item.val)),
         _ => Err(HttpResponse::NotFound().body("Undefined"))
     }
@@ -101,6 +103,7 @@ pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Da
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
+    let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
@@ -108,7 +111,7 @@ pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Da
 
     let sql_pool = sql_pool_handler(pool)?;
 
-    match Item::history(id.as_str(), &sql_pool) {
+    match Item::history(id.as_str(), namespace, &sql_pool) {
         Ok(item_list) => {
             let mut val_list: Vec<String> = Vec::new();
             for item in item_list.iter() {
@@ -126,6 +129,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
+    let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
@@ -139,7 +143,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
             .unwrap_or_else(|| {&default_filter})
             .to_string();
 
-    let results = ItemList::list(&sql_pool, filter).unwrap();
+    let results = ItemList::list(&sql_pool, filter, namespace).unwrap();
 
     let delimiter = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
@@ -161,13 +165,14 @@ pub async fn update_item(web::Path((id, val)): web::Path<(String, String)>, req:
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
+    let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
         return Err(HttpResponse::Unauthorized().body(psk_result))
     };
 
     let sql_pool = sql_pool_handler(pool)?;
-    Item::replace_into(id.as_str(), val.as_str(), &sql_pool).unwrap();
+    Item::replace_into(id.as_str(), val.as_str(), namespace, &sql_pool).unwrap();
 
     Ok(HttpResponse::Ok().body(
         val

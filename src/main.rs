@@ -4,7 +4,6 @@ extern crate openssl;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate actix;
 extern crate actix_web;
 extern crate dotenv;
 extern crate openssl_probe;

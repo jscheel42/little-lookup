@@ -3,5 +3,6 @@ table! {
         key -> Text,
         val -> Text,
         updated_at -> Timestamptz,
+        namespace -> Text,
     }
 }

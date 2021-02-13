@@ -1,8 +1,23 @@
+use std::collections::HashMap;
+
 pub fn get_database() -> String {
     let key = "LITTLE_LOOKUP_DATABASE";
     match std::env::var(key) {
         Ok(val) => val,
         Err(_) => String::from("postgres://docker:docker@localhost:5432/little-lookup"),
+    }
+}
+
+
+pub fn get_namespace(query_options_map: &HashMap<String, String>) -> &str {
+    match query_options_map.get("ns") {
+        Some(namespace) => return namespace.as_str(),
+        None => (),
+    };
+
+    match query_options_map.get("namespace") {
+        Some(namespace) => namespace.as_str(),
+        None => "default",
     }
 }
 
