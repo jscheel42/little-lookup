@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   little-lookup:
-    # image: jscheel42/little-lookup:v2.1.0
+    # image: jscheel42/little-lookup:v2.2.0
     build: .
     environment:
       # - LITTLE_LOOKUP_PSK_READ=read

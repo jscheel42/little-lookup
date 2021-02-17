@@ -5,7 +5,7 @@ date
 
 for i in $(seq -f %1.0f 1 1000000)
 do
-    curl ${LL_HOSTNAME}/update/key${i}/var${i}
+    curl ${LL_HOSTNAME}/update/key${i}/var${i}?psk=write
 done
 
 date
