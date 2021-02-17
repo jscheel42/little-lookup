@@ -59,8 +59,10 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpRespo
 pub async fn index() -> Result<HttpResponse, HttpResponse> {
     let body = "Routes:
   /get/<key>: Get val for <key>
+  /history/<key>: Get history for <key>
   /update/<key>/<val>: Update <val> for <key>
   /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
+  /script?filter=<x>: Get bash script to export all keys, optional filter (sql like %<x>%)
   /delete/<key>: Delete <val> for <key>";
     Ok(HttpResponse::Ok().body(body))
 }
@@ -145,7 +147,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
 
     let results = ItemList::list(&sql_pool, filter, namespace).unwrap();
 
-    let delimiter = match query_options_map.get("delim") {
+    let delimiter: &str = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
         None => " ",
     };
@@ -154,6 +156,40 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
         &acc.push_str(&result.key);
         &acc.push_str(delimiter);
         &acc.push_str(&result.val);
+        &acc.push_str("\n");
+        acc
+    });
+
+    Ok(HttpResponse::Ok().body(result_collection))
+}
+
+pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+    let query_options_map = req_query_to_map(
+        req.query_string().to_string()
+    );
+    let namespace: &str = get_namespace(&query_options_map);
+    let psk_result = check_psk(&query_options_map, PSKType::READ);
+    if psk_result.len() > 0 {
+        return Err(HttpResponse::Unauthorized().body(psk_result))
+    };
+
+    let sql_pool = sql_pool_handler(pool)?;
+
+    let default_filter = String::from("");
+    let filter: String = query_options_map
+            .get("filter")
+            .unwrap_or_else(|| {&default_filter})
+            .to_string();
+
+    let results = ItemList::list(&sql_pool, filter, namespace).unwrap();
+
+    let result_collection: String = results.iter().fold(String::from("#!/bin/bash\n"),
+    |mut acc, result| {
+        &acc.push_str("export ");
+        &acc.push_str(&result.key);
+        &acc.push_str("='");
+        &acc.push_str(&result.val);
+        &acc.push_str("'");
         &acc.push_str("\n");
         acc
     });

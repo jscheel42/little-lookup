@@ -97,3 +97,13 @@ Delete value for key (foo)
 ```
 localhost:8088/delete/foo
 ```
+
+Create bash script to export values for all keys
+```
+localhost:8088/script
+```
+
+Create bash script to export all keys that match filter (sql like '%X%')
+```
+localhost:8088/script?filter=<x>
+```

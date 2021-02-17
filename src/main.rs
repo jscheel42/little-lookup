@@ -50,6 +50,10 @@ async fn main() -> std::io::Result<()> {
                 web::resource("/list")
                     .route(web::get().to(handlers::items::list_items))
             )
+            .service(
+                web::resource("/script")
+                    .route(web::get().to(handlers::items::script))
+            )
     })
     .bind("0.0.0.0:8088")?
     .workers(get_worker_num())
