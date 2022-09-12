@@ -8,9 +8,9 @@ edition = "2018"
 
 [dependencies]
 actix-rt = "*" # dep in actix-web, added here so we can reference the crate in main.rs
-actix-web = "3.3.2"
+actix-web = "3.3.3"
 chrono = "0.4" # { version = "0.4", features = ["serde", "rustc-serialize"] }
-diesel = { version = "1.4.5", features = [ "r2d2", "postgres", "chrono" ] }
+diesel = { version = "1.4.8", features = [ "r2d2", "postgres", "chrono" ] }
 diesel_migrations = "1.4.0"
 dotenv = "0.15"
 openssl = "*" # Needed for postgres

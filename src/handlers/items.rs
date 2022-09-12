@@ -153,10 +153,10 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
     };
 
     let result_collection: String = results.iter().fold(String::from(""), |mut acc, result| {
-        &acc.push_str(&result.key);
-        &acc.push_str(delimiter);
-        &acc.push_str(&result.val);
-        &acc.push_str("\n");
+        let _ = &acc.push_str(&result.key);
+        let _ = &acc.push_str(delimiter);
+        let _ = &acc.push_str(&result.val);
+        let _ = &acc.push_str("\n");
         acc
     });
 
@@ -185,12 +185,12 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRespo
 
     let result_collection: String = results.iter().fold(String::from("#!/bin/bash\n"),
     |mut acc, result| {
-        &acc.push_str("export ");
-        &acc.push_str(&result.key);
-        &acc.push_str("='");
-        &acc.push_str(&result.val);
-        &acc.push_str("'");
-        &acc.push_str("\n");
+        let _ = &acc.push_str("export ");
+        let _ = &acc.push_str(&result.key);
+        let _ = &acc.push_str("='");
+        let _ = &acc.push_str(&result.val);
+        let _ = &acc.push_str("'");
+        let _ = &acc.push_str("\n");
         acc
     });
 
