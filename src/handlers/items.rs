@@ -56,7 +56,7 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpRespo
 
 // Route handler functions
 
-pub async fn index() -> Result<HttpResponse, HttpResponse> {
+pub async fn index() -> HttpResponse {
     let body = "Routes:
   /get/<key>: Get val for <key>
   /history/<key>: Get history for <key>
@@ -64,7 +64,7 @@ pub async fn index() -> Result<HttpResponse, HttpResponse> {
   /list?filter=<x>&delim=<y>: List all keys, optional filter (sql like %<x>%), optional custom delimiter <y> (defaults to space)
   /script?filter=<x>: Get bash script to export all keys, optional filter (sql like %<x>%)
   /delete/<key>: Delete <val> for <key>";
-    Ok(HttpResponse::Ok().body(body))
+    HttpResponse::Ok().body(body)
 }
 
 pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
