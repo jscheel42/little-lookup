@@ -197,7 +197,8 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRespo
     Ok(HttpResponse::Ok().body(result_collection))
 }
 
-pub async fn update_item(web::Path((id, val)): web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+    let (id, val) = params.into_inner();
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );

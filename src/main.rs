@@ -25,7 +25,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .data(establish_connection())
+            .app_data(establish_connection())
             .service(
                 web::resource("/")
                     .route(web::get().to(handlers::items::index))
