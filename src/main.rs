@@ -14,18 +14,23 @@ pub mod models;
 pub mod schema;
 pub mod util;
 
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, HttpServer, web::{self,Data}};
 use db_connection::{establish_connection};
 use util::{get_worker_num};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    // // Toggle for debugging
+    // std::env::set_var("RUST_LOG", "debug");
+    // std::env::set_var("RUST_BACKTRACE", "1");
+    // env_logger::init();
+
     openssl_probe::init_ssl_cert_env_vars();
     dotenv::dotenv().unwrap_or_default();
 
     HttpServer::new(|| {
         App::new()
-            .app_data(establish_connection())
+            .app_data(Data::new(establish_connection()))
             .service(
                 web::resource("/")
                     .route(web::get().to(handlers::items::index))

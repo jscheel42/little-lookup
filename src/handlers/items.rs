@@ -1,4 +1,6 @@
 use actix_web::{web, HttpRequest, HttpResponse};
+use diesel::r2d2::PoolError;
+use log::error;
 use std::collections::HashMap;
 
 use crate::db_connection::{Pool, PooledConnection};
@@ -46,12 +48,14 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
     query_map
 }
 
-fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, HttpResponse> {
-    pool
-    .get()
-    .map_err(|e| {
-        HttpResponse::InternalServerError().body(e.to_string())
-    })
+fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, PoolError> {
+    match pool.get() {
+        Ok(pool) => Ok(pool),
+        Err(e) => {
+            error!("{}", e);
+            Err(e)   
+        }
+    }
 }
 
 // Route handler functions
@@ -67,51 +71,63 @@ pub async fn index() -> HttpResponse {
     HttpResponse::Ok().body(body)
 }
 
-pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
 
     let delete_count = Item::destroy(id.as_str(), namespace, &sql_pool).unwrap();
-    Ok(HttpResponse::Ok().body(format!("{} items deleted", delete_count)))
+    HttpResponse::Ok().body(format!("{} items deleted", delete_count))
 }
 
-pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
 
     match Item::find(id.as_str(), namespace, &sql_pool) {
-        Ok(item) => Ok(HttpResponse::Ok().body(item.val)),
-        _ => Err(HttpResponse::NotFound().body("Undefined"))
+        Ok(item) => HttpResponse::Ok().body(item.val),
+        _ => HttpResponse::NotFound().body("Undefined")
     }
 }
 
-pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
 
     match Item::history(id.as_str(), namespace, &sql_pool) {
         Ok(item_list) => {
@@ -119,25 +135,29 @@ pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Da
             for item in item_list.iter() {
                 val_list.push(item.val.clone())
             }
-            Ok(HttpResponse::Ok().body(
+            HttpResponse::Ok().body(
                 val_list.join("\n")
-            ))
+            )
         },
-        _ => Err(HttpResponse::NotFound().body("Undefined"))
+        _ => HttpResponse::NotFound().body("Undefined")
     }
 }
 
-pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
 
     let default_filter = String::from("");
     let filter: String = query_options_map
@@ -160,20 +180,24 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpR
         acc
     });
 
-    Ok(HttpResponse::Ok().body(result_collection))
+    HttpResponse::Ok().body(result_collection)
 }
 
-pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
     );
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::READ);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
 
     let default_filter = String::from("");
     let filter: String = query_options_map
@@ -194,10 +218,10 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpRespo
         acc
     });
 
-    Ok(HttpResponse::Ok().body(result_collection))
+    HttpResponse::Ok().body(result_collection)
 }
 
-pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, HttpResponse> {
+pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let (id, val) = params.into_inner();
     let query_options_map = req_query_to_map(
         req.query_string().to_string()
@@ -205,13 +229,18 @@ pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, 
     let namespace: &str = get_namespace(&query_options_map);
     let psk_result = check_psk(&query_options_map, PSKType::WRITE);
     if psk_result.len() > 0 {
-        return Err(HttpResponse::Unauthorized().body(psk_result))
+        return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let sql_pool = sql_pool_handler(pool)?;
+    let sql_pool =
+        match sql_pool_handler(pool) {
+            Ok(sql_pool) => sql_pool,
+            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+        };
+
     Item::replace_into(id.as_str(), val.as_str(), namespace, &sql_pool).unwrap();
 
-    Ok(HttpResponse::Ok().body(
+    HttpResponse::Ok().body(
         val
-    ))
+    )
 }
