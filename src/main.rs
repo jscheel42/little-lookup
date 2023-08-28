@@ -15,7 +15,7 @@ pub mod schema;
 pub mod util;
 
 use actix_web::{App, HttpServer, web::{self,Data}};
-use db_connection::{establish_connection};
+use db_connection::{establish_connection, run_sql_schema_migrations};
 use util::{get_worker_num};
 
 #[actix_rt::main]
@@ -27,6 +27,8 @@ async fn main() -> std::io::Result<()> {
 
     openssl_probe::init_ssl_cert_env_vars();
     dotenv::dotenv().unwrap_or_default();
+
+    run_sql_schema_migrations();
 
     HttpServer::new(|| {
         App::new()
