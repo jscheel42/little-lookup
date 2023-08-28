@@ -17,3 +17,7 @@ env_logger = "0.10.0"
 log = "0.4.17"
 openssl = "*" # Needed for postgres
 openssl-probe = "0.1.2"
+time = "0.3.28" # Security patching, specifying to pull upstream deps forward
+
+[dev-dependencies]
+time = "0.3.28" # Security patching, specifying to pull upstream deps forward

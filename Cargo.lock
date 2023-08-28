@@ -852,6 +852,7 @@ dependencies = [
  "log",
  "openssl",
  "openssl-probe",
+ "time 0.3.28",
 ]
 
 [[package]]
