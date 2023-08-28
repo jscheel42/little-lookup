@@ -50,7 +50,7 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
 
 fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, PoolError> {
     match pool.get() {
-        Ok(pool) => Ok(pool),
+        Ok(sql_pooled_connection) => Ok(sql_pooled_connection),
         Err(e) => {
             error!("{}", e);
             Err(e)   
@@ -81,13 +81,13 @@ pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Dat
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    let delete_count = Item::destroy(id.as_str(), namespace, &mut sql_pool).unwrap();
+    let delete_count = Item::destroy(id.as_str(), namespace, &mut sql_pooled_connection).unwrap();
     HttpResponse::Ok().body(format!("{} items deleted", delete_count))
 }
 
@@ -101,13 +101,13 @@ pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<P
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    match Item::find(id.as_str(), namespace, &mut sql_pool) {
+    match Item::find(id.as_str(), namespace, &mut sql_pooled_connection) {
         Ok(item) => HttpResponse::Ok().body(item.val),
         _ => HttpResponse::NotFound().body("Undefined")
     }
@@ -123,13 +123,13 @@ pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Da
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    match Item::history(id.as_str(), namespace, &mut sql_pool) {
+    match Item::history(id.as_str(), namespace, &mut sql_pooled_connection) {
         Ok(item_list) => {
             let mut val_list: Vec<String> = Vec::new();
             for item in item_list.iter() {
@@ -153,9 +153,9 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
@@ -165,7 +165,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse
             .unwrap_or_else(|| {&default_filter})
             .to_string();
 
-    let results = ItemList::list(&mut sql_pool, filter, namespace).unwrap();
+    let results = ItemList::list(&mut sql_pooled_connection, filter, namespace).unwrap();
 
     let delimiter: &str = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
@@ -193,9 +193,9 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
@@ -205,7 +205,7 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
             .unwrap_or_else(|| {&default_filter})
             .to_string();
 
-    let results = ItemList::list(&mut sql_pool, filter, namespace).unwrap();
+    let results = ItemList::list(&mut sql_pooled_connection, filter, namespace).unwrap();
 
     let result_collection: String = results.iter().fold(String::from("#!/bin/bash\n"),
     |mut acc, result| {
@@ -232,13 +232,13 @@ pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, 
         return HttpResponse::Unauthorized().body(psk_result)
     };
 
-    let mut sql_pool =
+    let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
-            Ok(sql_pool) => sql_pool,
+            Ok(sql_pooled_connection) => sql_pooled_connection,
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    Item::replace_into(id.as_str(), val.as_str(), namespace, &mut sql_pool).unwrap();
+    Item::replace_into(id.as_str(), val.as_str(), namespace, &mut sql_pooled_connection).unwrap();
 
     HttpResponse::Ok().body(
         val

@@ -14,8 +14,11 @@ pub fn establish_connection() -> Pool {
     let database_url = get_database();
 
     let mut sql_pool = init_pool(&database_url).expect("Failed to create pool");
+
+    // Create a pooled connection which we'll use to run migrations
     let mut sql_pooled_connection = sql_pool_handler(&mut sql_pool).unwrap();
     prepare_database(&mut sql_pooled_connection);
+
     sql_pool
 }
 
@@ -30,6 +33,6 @@ fn prepare_database(connection: &mut PgConnection) {
 }
 
 fn sql_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
-    let sql_pool = pool.get().unwrap();
-    Ok(sql_pool)
+    let sql_pooled_connection = pool.get().unwrap();
+    Ok(sql_pooled_connection)
 }

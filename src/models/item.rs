@@ -15,7 +15,7 @@ pub struct Item {
 }
 
 #[derive(Insertable)]
-#[table_name = "items"]
+#[diesel(table_name = items)]
 pub struct NewItem<'a> {
     pub key: &'a str,
     pub val: &'a str,
