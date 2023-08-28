@@ -24,7 +24,7 @@ pub struct NewItem<'a> {
 }
 
 impl ItemList {
-    pub fn list(connection: &PgConnection, sql_filter: String, namespace_id: &str) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
+    pub fn list(connection: &mut PgConnection, sql_filter: String, namespace_id: &str) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, updated_at, namespace};
 
         let f = format!("%{}%", sql_filter);
@@ -41,7 +41,7 @@ impl ItemList {
 }
 
 impl Item {
-    pub fn find(key_id: &str, namespace_id: &str, connection: &PgConnection) -> Result<Item, diesel::result::Error> {
+    pub fn find(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<Item, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, updated_at, namespace};
 
         items.filter(key.eq(key_id))
@@ -50,7 +50,7 @@ impl Item {
             .first(connection)
     }
     
-    pub fn history(key_id: &str, namespace_id: &str, connection: &PgConnection) -> Result<Vec<Item>, diesel::result::Error> {
+    pub fn history(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<Vec<Item>, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, updated_at, namespace};
 
         items.filter(key.eq(key_id))
@@ -59,7 +59,7 @@ impl Item {
             .get_results(connection)
     }
 
-    pub fn destroy(key_id: &str, namespace_id: &str, connection: &PgConnection) -> Result<usize, diesel::result::Error> {
+    pub fn destroy(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<usize, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, namespace};
 
         let delete_count = diesel::delete(
@@ -70,7 +70,7 @@ impl Item {
         Ok(delete_count)
     }
 
-    pub fn replace_into(key_id: &str, value: &str, namespace_id: &str, connection: &PgConnection) -> Result<(), diesel::result::Error> {
+    pub fn replace_into(key_id: &str, value: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<(), diesel::result::Error> {
         let q = format!("INSERT INTO items(key, val, namespace) VALUES ('{0}', '{1}', '{2}')",
                         key_id, value, namespace_id);
         diesel::sql_query(q).execute(connection)?;
