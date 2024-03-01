@@ -16,7 +16,7 @@ pub mod util;
 
 use actix_web::{App, HttpServer, web::{self,Data}};
 use db_connection::{establish_connection, run_sql_schema_migrations};
-use util::{get_worker_num};
+use util::get_worker_num;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
