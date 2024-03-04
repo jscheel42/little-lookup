@@ -67,3 +67,56 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
+#[cfg(test)]
+mod tests {
+    use actix_web::test;
+
+    use super::*;
+    #[actix_rt::test]
+    async fn test_index() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(establish_connection().unwrap()))
+                .service(web::resource("/").route(web::get().to(handlers::items::index))),
+        )
+        .await;
+
+        let req = test::TestRequest::get().uri("/").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_item() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(establish_connection().unwrap()))
+                .service(
+                    web::resource("/delete/{id}")
+                        .route(web::get().to(handlers::items::delete_item)),
+                ),
+        )
+        .await;
+
+        let req = test::TestRequest::get().uri("/delete/1").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert!(resp.status().is_success());
+    }
+
+    // Add more test cases for other handlers...
+
+    #[actix_rt::test]
+    async fn test_list_items() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(establish_connection().unwrap()))
+                .service(web::resource("/list").route(web::get().to(handlers::items::list_items))),
+        )
+        .await;
+
+        let req = test::TestRequest::get().uri("/list").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert!(resp.status().is_success());
+    }
+}
