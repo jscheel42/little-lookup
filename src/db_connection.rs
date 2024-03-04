@@ -39,32 +39,32 @@ fn sql_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
     Ok(sql_pooled_connection)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     #[test]
-//     fn test_establish_connection() {
-//         let pool = establish_connection();
-//         assert!(pool.is_ok);
-//     }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_establish_connection() {
+        let pool = establish_connection();
+        assert!(pool.is_ok());
+    }
 
-//     #[test]
-//     fn test_run_sql_schema_migrations() {
-//         run_sql_schema_migrations();
-//         // Add assertions here to verify the success of the migrations
-//     }
+    #[test]
+    fn test_run_sql_schema_migrations() {
+        run_sql_schema_migrations();
+        // Add assertions here to verify the success of the migrations
+    }
 
-//     #[test]
-//     fn test_init_pool() {
-//         let database_url = "your_database_url";
-//         let pool = init_pool(database_url);
-//         assert!(pool.is_ok());
-//     }
+    #[test]
+    fn test_init_pool() {
+        let database_url: String = get_database();
+        let pool = init_pool(&database_url);
+        assert!(pool.is_ok());
+    }
 
-//     #[test]
-//     fn test_sql_pool_handler() {
-//         let pool = establish_connection();
-//         let connection = sql_pool_handler(&pool);
-//         assert!(connection.is_ok());
-//     }
-// }
+    #[test]
+    fn test_sql_pool_handler() {
+        let pool = establish_connection();
+        let connection = sql_pool_handler(&pool.unwrap());
+        assert!(connection.is_ok());
+    }
+}
