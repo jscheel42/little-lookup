@@ -244,3 +244,48 @@ pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, 
         val
     )
 }
+
+
+#[cfg(test)]
+mod tests {
+    use actix_web::{http, test, App, web::{self,Data}};
+
+    use crate::db_connection::establish_connection;
+
+    use super::*;
+    #[actix_rt::test]
+    async fn test_script() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(establish_connection().unwrap()))
+                .route("/script", web::get().to(script)),
+        )
+        .await;
+
+        let req = test::TestRequest::get().uri("/script?filter=test").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+
+        let body: web::Bytes = test::read_body(resp).await;
+        assert_eq!(body, "#!/bin/bash\n");
+    }
+
+    #[actix_rt::test]
+    async fn test_update_item() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(Data::new(establish_connection().unwrap()))
+                .route("/update/{id}/{val}", web::put().to(update_item)),
+        )
+        .await;
+
+        let req = test::TestRequest::put()
+            .uri("/update/item1/value1?filter=test")
+            .to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+
+        let body = test::read_body(resp).await;
+        assert_eq!(body, "value1");
+    }
+}

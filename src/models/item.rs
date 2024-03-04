@@ -77,3 +77,60 @@ impl Item {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::util::get_database;
+
+    use super::*;
+    use diesel::prelude::*;
+    // Helper function to establish a database connection
+    fn establish_connection() -> PgConnection {
+        let database_url = get_database();
+        PgConnection::establish(&database_url).expect("Failed to connect to database")
+    }
+
+    #[test]
+    fn test_list_items() {
+        let mut connection = establish_connection();
+        let sql_filter = String::from("example");
+        let namespace_id = "my_namespace";
+
+        let result = ItemList::list(&mut connection, sql_filter, namespace_id);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_history_items() {
+        let mut connection = establish_connection();
+        let key_id = "example_key";
+        let namespace_id = "my_namespace";
+
+        let result = Item::history(key_id, namespace_id, &mut connection);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_destroy_item() {
+        let mut connection = establish_connection();
+        let key_id = "example_key";
+        let namespace_id = "my_namespace";
+
+        let result = Item::destroy(key_id, namespace_id, &mut connection);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_replace_into_item_and_find() {
+        let mut connection = establish_connection();
+        let key_id = "example_key";
+        let value: &str = "example_value";
+        let namespace_id = "my_namespace";
+
+        let result = Item::replace_into(key_id, value, namespace_id, &mut connection);
+        assert!(result.is_ok());
+
+        let result = Item::find(key_id, namespace_id, &mut connection);
+        assert!(result.is_ok());
+    }
+}
