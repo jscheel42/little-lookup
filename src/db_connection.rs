@@ -11,14 +11,14 @@ use crate::util::{get_database, get_pool_size_per_worker};
 // diesel_migrations::embed_migrations!();
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-pub fn establish_connection() -> Pool {
+pub fn establish_connection() -> Result<Pool, PoolError> {
     let database_url = get_database();
-    let sql_pool = init_pool(&database_url).expect("Failed to create pool");
+    let sql_pool = init_pool(&database_url);
     sql_pool
 }
 
 pub fn run_sql_schema_migrations() {
-    let mut sql_pool = establish_connection();
+    let mut sql_pool = establish_connection().unwrap();
     let mut sql_pooled_connection = sql_pool_handler(&mut sql_pool).unwrap(); 
 
     print!("Running diesel database migrations...\n");
@@ -38,3 +38,33 @@ fn sql_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
     let sql_pooled_connection = pool.get().unwrap();
     Ok(sql_pooled_connection)
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     #[test]
+//     fn test_establish_connection() {
+//         let pool = establish_connection();
+//         assert!(pool.is_ok);
+//     }
+
+//     #[test]
+//     fn test_run_sql_schema_migrations() {
+//         run_sql_schema_migrations();
+//         // Add assertions here to verify the success of the migrations
+//     }
+
+//     #[test]
+//     fn test_init_pool() {
+//         let database_url = "your_database_url";
+//         let pool = init_pool(database_url);
+//         assert!(pool.is_ok());
+//     }
+
+//     #[test]
+//     fn test_sql_pool_handler() {
+//         let pool = establish_connection();
+//         let connection = sql_pool_handler(&pool);
+//         assert!(connection.is_ok());
+//     }
+// }

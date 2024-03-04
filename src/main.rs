@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .app_data(Data::new(establish_connection()))
+            .app_data(Data::new(establish_connection().unwrap()))
             .service(
                 web::resource("/")
                     .route(web::get().to(handlers::items::index))
