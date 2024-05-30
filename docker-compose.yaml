@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   little-lookup:
     # image: jscheel42/little-lookup:v2.2.0
