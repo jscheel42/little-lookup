@@ -138,9 +138,10 @@ pub async fn history_item(id: web::Path<String>, req: HttpRequest, pool: web::Da
             for item in item_list.iter() {
                 val_list.push(item.val.clone())
             }
-            HttpResponse::Ok().body(
-                val_list.join("\n")
-            )
+
+            let body_string: String = format!("<pre>\n{}</pre>", val_list.join("\n"));
+
+            HttpResponse::Ok().body(body_string)
         },
         _ => HttpResponse::NotFound().body("Undefined")
     }
@@ -183,7 +184,9 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse
         acc
     });
 
-    HttpResponse::Ok().body(result_collection)
+    let body_string: String = format!("<pre>\n{}</pre>", result_collection);
+
+    HttpResponse::Ok().body(body_string)
 }
 
 pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
@@ -221,7 +224,9 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
         acc
     });
 
-    HttpResponse::Ok().body(result_collection)
+    let body_string: String = format!("<pre>\n{}</pre>", result_collection);
+
+    HttpResponse::Ok().body(body_string)
 }
 
 pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
