@@ -1,6 +1,6 @@
 [package]
 name = "little-lookup"
-version = "2.5.4"
+version = "2.5.6"
 authors = ["jscheel42 <jscheel42@gmail.com>"]
 edition = "2021"
 
@@ -8,13 +8,14 @@ edition = "2021"
 
 [dependencies]
 actix-rt = "*" # dep in actix-web, added here so we can reference the crate in main.rs
-actix-web = "4.5.1"
-chrono = "0.4.34" # { version = "0.4", features = ["serde", "rustc-serialize"] }
-diesel = { version = "2.1.4", features = [ "r2d2", "postgres", "chrono" ] }
+actix-web = "4.6.0"
+chrono = "0.4.38" # { version = "0.4", features = ["serde", "rustc-serialize"] }
+diesel = { version = "2.1.6", features = [ "r2d2", "postgres", "chrono" ] }
 diesel_migrations = "2.1.0"
 dotenv = "0.15"
-env_logger = "0.11.2"
+env_logger = "0.11.3"
 log = "0.4.21"
+h2 = "~0.3.26" # force 0.3.26 or higher for https://seanmonstar.com/blog/hyper-http2-continuation-flood/, remove requirement once upstream deps bump mio
 mio = "~0.8.11" # force 0.8.11 or higher for https://rustsec.org/advisories/RUSTSEC-2024-0019.html, remove requirement once upstream deps bump mio
 openssl = "0.10.64" # Needed for postgres
 openssl-probe = "0.1.5"
