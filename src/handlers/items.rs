@@ -64,12 +64,12 @@ pub async fn index() -> HttpResponse {
     let body = "
 <p>Routes:</p>
 <ul>
-<li>/get/$KEY: Get val for $KEY</li>
-<li>/history/$KEY: Get history for $KEY</li>
-<li>/update/$KEY/$VAL: Update $VAL for $KEY</li>
-<li>/list?filter=$FOO&delim=$BAR: List all keys, optional filter (sql like %$FOO%), optional custom delimiter $BAR (defaults to space)</li>
-<li>/script?filter=$FOO: Get bash script to export all keys, optional filter (sql like %$FOO%)</li>
-<li>/delete/$KEY: Delete $VAL for $KEY</li>
+<li>/get/$KEY : Get val for $KEY</li>
+<li>/history/$KEY : Get history for $KEY</li>
+<li>/update/$KEY/$VAL : Update $VAL for $KEY</li>
+<li>/list?delim=$FOO : List all keys, optional custom delimiter $BAR (defaults to space)</li>
+<li>/script : Get bash script to export all keys</li>
+<li>/delete/$KEY : Delete $VAL for $KEY</li>
 </ul>";
     HttpResponse::Ok().body(body)
 }
@@ -163,13 +163,7 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    let default_filter = String::from("");
-    let filter: String = query_options_map
-            .get("filter")
-            .unwrap_or_else(|| {&default_filter})
-            .to_string();
-
-    let results = ItemList::list(&mut sql_pooled_connection, filter, namespace).unwrap();
+    let results = ItemList::list(&mut sql_pooled_connection, namespace).unwrap();
 
     let delimiter: &str = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
@@ -205,13 +199,7 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
             Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
         };
 
-    let default_filter = String::from("");
-    let filter: String = query_options_map
-            .get("filter")
-            .unwrap_or_else(|| {&default_filter})
-            .to_string();
-
-    let results = ItemList::list(&mut sql_pooled_connection, filter, namespace).unwrap();
+    let results = ItemList::list(&mut sql_pooled_connection, namespace).unwrap();
 
     let result_collection: String = results.iter().fold(String::from("#!/bin/bash\n"),
     |mut acc, result| {
@@ -270,12 +258,12 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::get().uri("/script?filter=test").to_request();
+        let req = test::TestRequest::get().uri("/script?ns=test").to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
 
         let body: web::Bytes = test::read_body(resp).await;
-        assert_eq!(body, "#!/bin/bash\n");
+        assert_eq!(body, "<pre>\n#!/bin/bash\n</pre>");
     }
 
     #[actix_rt::test]
@@ -288,7 +276,7 @@ mod tests {
         .await;
 
         let req = test::TestRequest::put()
-            .uri("/update/item1/value1?filter=test")
+            .uri("/update/item1/value1")
             .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);

@@ -1,4 +1,4 @@
-use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl, TextExpressionMethods};
+use crate::diesel::{ExpressionMethods, Insertable, QueryDsl, Queryable, RunQueryDsl};
 use crate::schema::items;
 use chrono::{DateTime, Utc};
 
@@ -24,13 +24,11 @@ pub struct NewItem<'a> {
 }
 
 impl ItemList {
-    pub fn list(connection: &mut PgConnection, sql_filter: String, namespace_id: &str) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
+    pub fn list(connection: &mut PgConnection, namespace_id: &str) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, updated_at, namespace};
 
-        let f = format!("%{}%", sql_filter);
         let result = 
             items
-                .filter(key.like(f))
                 .filter(namespace.eq(namespace_id))
                 .order_by((key, updated_at.desc()))
                 .distinct_on(key)
@@ -93,10 +91,9 @@ mod tests {
     #[test]
     fn test_list_items() {
         let mut connection = establish_connection();
-        let sql_filter = String::from("example");
         let namespace_id = "my_namespace";
 
-        let result = ItemList::list(&mut connection, sql_filter, namespace_id);
+        let result = ItemList::list(&mut connection, namespace_id);
         assert!(result.is_ok());
     }
 
