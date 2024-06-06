@@ -1,6 +1,6 @@
 [package]
 name = "little-lookup"
-version = "2.5.6"
+version = "2.5.7"
 authors = ["jscheel42 <jscheel42@gmail.com>"]
 edition = "2021"
 

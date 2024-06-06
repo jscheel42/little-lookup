@@ -61,13 +61,16 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, PoolError
 // Route handler functions
 
 pub async fn index() -> HttpResponse {
-    let body = "Routes:
-  /get/$key: Get val for $key
-  /history/$key: Get history for $key
-  /update/$key/$val: Update $val for $key
-  /list?filter=FOO&delim=BAR: List all keys, optional filter (sql like %FOO%), optional custom delimiter BAR (defaults to space)
-  /script?filter=FOO: Get bash script to export all keys, optional filter (sql like %<x>%)
-  /delete/$key: Delete $val for $key";
+    let body = "
+<p>Routes:</p>
+<ul>
+<li>/get/$KEY: Get val for $KEY</li>
+<li>/history/$KEY: Get history for $KEY</li>
+<li>/update/$KEY/$VAL: Update $VAL for $KEY</li>
+<li>/list?filter=$FOO&delim=$BAR: List all keys, optional filter (sql like %$FOO%), optional custom delimiter $BAR (defaults to space)</li>
+<li>/script?filter=$FOO: Get bash script to export all keys, optional filter (sql like %$FOO%)</li>
+<li>/delete/$KEY: Delete $VAL for $KEY</li>
+</ul>";
     HttpResponse::Ok().body(body)
 }
 
