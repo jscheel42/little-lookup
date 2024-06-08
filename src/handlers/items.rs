@@ -62,6 +62,7 @@ fn sql_pool_handler(pool: web::Data<Pool>) -> Result<PooledConnection, PoolError
 
 pub async fn index() -> HttpResponse {
     let body = "
+<p>Testing CD</p>
 <p>Routes:</p>
 <ul>
 <li>/get/$KEY : Get val for $KEY</li>
