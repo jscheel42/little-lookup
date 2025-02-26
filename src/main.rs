@@ -5,7 +5,7 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 extern crate actix_web;
-extern crate dotenv;
+extern crate dotenvy;
 extern crate openssl_probe;
 
 pub mod db_connection;
@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
     // env_logger::init();
 
     unsafe { openssl_probe::init_openssl_env_vars(); }
-    dotenv::dotenv().unwrap_or_default();
+    dotenvy::dotenv().unwrap_or_default();
 
     run_sql_schema_migrations();
 

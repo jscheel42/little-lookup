@@ -12,10 +12,17 @@ actix-web = "4.9.0"
 chrono = "0.4.39" # { version = "0.4", features = ["serde", "rustc-serialize"] }
 diesel = { version = "2.2.7", features = [ "r2d2", "postgres", "chrono" ] }
 diesel_migrations = "2.2.0"
-dotenv = "0.15"
+dotenvy = "0.15"
 env_logger = "0.11.6"
 log = "0.4.25"
 h2 = "~0.4.7" # force 0.3.26 or higher for https://seanmonstar.com/blog/hyper-http2-continuation-flood/, remove requirement once upstream deps bump mio
 mio = "~1.0.3" # force 0.8.11 or higher for https://rustsec.org/advisories/RUSTSEC-2024-0019.html, remove requirement once upstream deps bump mio
 openssl = "0.10.70" # Needed for postgres
 openssl-probe = "0.1.6"
+url = "2.5.0" # Force newer version with fixed idna dependency
+
+[dependencies.ahash]
+version = "0.8.11"
+
+[dependencies.futures-util]
+version = "0.3.31"
