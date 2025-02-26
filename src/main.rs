@@ -25,7 +25,7 @@ async fn main() -> std::io::Result<()> {
     // std::env::set_var("RUST_BACKTRACE", "1");
     // env_logger::init();
 
-    openssl_probe::init_ssl_cert_env_vars();
+    unsafe { openssl_probe::init_openssl_env_vars(); }
     dotenv::dotenv().unwrap_or_default();
 
     run_sql_schema_migrations();
