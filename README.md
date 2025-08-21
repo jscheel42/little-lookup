@@ -2,6 +2,11 @@
 
 Little Lookup is a simple Key/Value store for strings.
 
+## CD
+
+Online until my AlloyDB free trial ends:
+* https://little-lookup-945130679167.us-central1.run.app
+
 ## Docker / Helm
 
 Docker image available at: https://hub.docker.com/r/jscheel42/little-lookup
