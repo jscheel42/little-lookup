@@ -4,7 +4,7 @@
 ## BUILD IMAGE
 ##
 
-FROM rust:1-slim-buster as cargo-build
+FROM rust:1-slim-trixie AS cargo-build
 
 WORKDIR /usr/local/src
 
@@ -29,7 +29,7 @@ RUN chown 1000:1000 /usr/local/src/target/release/little-lookup
 ## FINAL IMAGE
 ##
 
-FROM debian:buster-slim
+FROM debian:trixie-slim
 
 RUN apt-get update &&\
         apt-get install -y \
@@ -37,8 +37,10 @@ RUN apt-get update &&\
             libpq5 &&\
         rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -gid 1000 app
-RUN adduser --disabled-password --shell /bin/bash --uid 1000 --ingroup app app
+RUN groupadd -g 1000 app
+RUN useradd --shell /bin/bash --create-home --uid 1000 --gid app --password '!' app
+RUN passwd -l app
+
 RUN mkdir /data
 RUN chown app:app /data
 
