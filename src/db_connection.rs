@@ -29,6 +29,14 @@ pub fn run_sql_schema_migrations() {
     stdout().flush().unwrap();
 }
 
+// Ensure migrations run before any tests that need the database schema
+#[ctor::ctor]
+fn init_schema() {
+    if cfg!(test) {
+        run_sql_schema_migrations();
+    }
+}
+
 fn init_pool(database_url: &str) -> Result<Pool, PoolError> {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     Pool::builder().max_size(get_pool_size_per_worker()).build(manager)

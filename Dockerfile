@@ -42,7 +42,7 @@ RUN adduser --disabled-password --shell /bin/bash --uid 1000 --ingroup app app
 RUN mkdir /data
 RUN chown app:app /data
 
-ENV LITTLE_LOOKUP_DATABASE postgres://docker:docker@localhost:5432/little-lookup
+ENV LITTLE_LOOKUP_DATABASE postgres://docker:docker@localhost:15432/little-lookup
 
 WORKDIR /home/app
 

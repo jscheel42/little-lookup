@@ -4,7 +4,7 @@ pub fn get_database() -> String {
     let key = "LITTLE_LOOKUP_DATABASE";
     match std::env::var(key) {
         Ok(val) => val,
-        Err(_) => String::from("postgres://docker:docker@localhost:5432/little-lookup"),
+        Err(_) => String::from("postgres://docker:docker@localhost:15432/little-lookup"),
     }
 }
 
@@ -68,7 +68,7 @@ mod tests {
         std::env::remove_var("LITTLE_LOOKUP_DATABASE");
         assert_eq!(
             get_database(),
-            "postgres://docker:docker@localhost:5432/little-lookup"
+            "postgres://docker:docker@localhost:15432/little-lookup"
         );
     }
 

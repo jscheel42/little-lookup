@@ -26,7 +26,7 @@ cargo build --release
 #### Database
 Set the location for the postgres database
 ```
-export LITTLE_LOOKUP_DATABASE=postgres://docker:docker@localhost:5432/little-lookup
+export LITTLE_LOOKUP_DATABASE=postgres://docker:docker@localhost:15432/little-lookup
 ```
 
 #### PSK

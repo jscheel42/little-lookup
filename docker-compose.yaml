@@ -5,7 +5,7 @@ services:
     environment:
       # - LITTLE_LOOKUP_PSK_READ=read
       - LITTLE_LOOKUP_PSK_WRITE=write
-      - LITTLE_LOOKUP_DATABASE=postgres://docker:docker@postgres:5432/little-lookup
+      - LITTLE_LOOKUP_DATABASE=postgres://docker:docker@postgres:15432/little-lookup
     ports: 
       - 8088:8088
   postgres:
@@ -15,4 +15,4 @@ services:
       - POSTGRES_USER=docker
       - POSTGRES_DB=little-lookup
     ports: 
-      - 5432:5432
+      - 15432:5432
