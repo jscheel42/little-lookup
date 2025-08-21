@@ -1,11 +1,12 @@
 services:
   little-lookup:
-    # image: jscheel42/little-lookup:v2.2.0
-    build: .
+    image: jscheel42/little-lookup:v2.6.3
+    platform: linux/amd64   # force amd64 + QEMU/Rosetta emulation
+    # build: .
     environment:
       # - LITTLE_LOOKUP_PSK_READ=read
       - LITTLE_LOOKUP_PSK_WRITE=write
-      - LITTLE_LOOKUP_DATABASE=postgres://docker:docker@postgres:15432/little-lookup
+      - LITTLE_LOOKUP_DATABASE=postgres://docker:docker@postgres:5432/little-lookup
     ports: 
       - 8088:8088
   postgres:
