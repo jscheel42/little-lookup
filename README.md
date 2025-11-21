@@ -23,15 +23,22 @@ apt install libpq-dev libssl-dev pkg-config
 ```
 
 ```
+### Compile
+
+Ubuntu packages required (including Ubuntu 24.04)
+```
+apt install libpq-dev libssl-dev pkg-config build-essential
+```
+
+For Rust installation, consider using rustup:
+```
+curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+```
+
+```
 cargo build --release
 ```
-
-### Configure
-
-#### Database
-Set the location for the postgres database
-```
-export LITTLE_LOOKUP_DATABASE=postgres://docker:docker@localhost:15432/little-lookup
 ```
 
 #### PSK
