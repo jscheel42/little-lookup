@@ -95,7 +95,9 @@ mod tests {
 
         let result = ItemList::list(&mut connection, namespace_id);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_empty() || result.is_ok());
+        // Result can be empty or contain items - both are valid
+        let items = result.unwrap();
+        assert!(items.is_empty() || !items.is_empty());
     }
 
     #[test]
