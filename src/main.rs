@@ -30,9 +30,17 @@ async fn main() -> std::io::Result<()> {
 
     run_sql_schema_migrations();
 
-    HttpServer::new(|| {
+    let pool = match establish_connection() {
+        Ok(pool) => pool,
+        Err(e) => {
+            eprintln!("Failed to establish database connection: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(establish_connection().unwrap()))
+            .app_data(Data::new(pool.clone()))
             .service(
                 web::resource("/")
                     .route(web::get().to(handlers::items::index))
@@ -75,9 +83,10 @@ mod tests {
     use super::*;
     #[actix_rt::test]
     async fn test_index() {
+        let pool = establish_connection().expect("Failed to establish connection");
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(establish_connection().unwrap()))
+                .app_data(Data::new(pool))
                 .service(web::resource("/").route(web::get().to(handlers::items::index))),
         )
         .await;
@@ -89,9 +98,10 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_delete_item() {
+        let pool = establish_connection().expect("Failed to establish connection");
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(establish_connection().unwrap()))
+                .app_data(Data::new(pool))
                 .service(
                     web::resource("/delete/{id}")
                         .route(web::get().to(handlers::items::delete_item)),
@@ -108,9 +118,10 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_list_items() {
+        let pool = establish_connection().expect("Failed to establish connection");
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(establish_connection().unwrap()))
+                .app_data(Data::new(pool))
                 .service(web::resource("/list").route(web::get().to(handlers::items::list_items))),
         )
         .await;

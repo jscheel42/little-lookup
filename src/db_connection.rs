@@ -18,15 +18,35 @@ pub fn establish_connection() -> Result<Pool, PoolError> {
 }
 
 pub fn run_sql_schema_migrations() {
-    let mut sql_pool = establish_connection().unwrap();
-    let mut sql_pooled_connection = sql_pool_handler(&mut sql_pool).unwrap(); 
+    let mut sql_pool = match establish_connection() {
+        Ok(pool) => pool,
+        Err(e) => {
+            eprintln!("Failed to establish database connection: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    let mut sql_pooled_connection = match sql_pool_handler(&mut sql_pool) {
+        Ok(conn) => conn,
+        Err(e) => {
+            eprintln!("Failed to get database connection from pool: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     print!("Running diesel database migrations...\n");
-    stdout().flush().unwrap();
+    let _ = stdout().flush();
     
-    let output = sql_pooled_connection.run_pending_migrations(MIGRATIONS).unwrap();
-    print!("{output:?}\n");
-    stdout().flush().unwrap();
+    match sql_pooled_connection.run_pending_migrations(MIGRATIONS) {
+        Ok(output) => {
+            print!("{output:?}\n");
+            let _ = stdout().flush();
+        }
+        Err(e) => {
+            eprintln!("Failed to run database migrations: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 // Ensure migrations run before any tests that need the database schema
@@ -43,8 +63,7 @@ fn init_pool(database_url: &str) -> Result<Pool, PoolError> {
 }    
 
 fn sql_pool_handler(pool: &Pool) -> Result<PooledConnection, PoolError> {
-    let sql_pooled_connection = pool.get().unwrap();
-    Ok(sql_pooled_connection)
+    pool.get()
 }
 
 #[cfg(test)]
@@ -72,7 +91,10 @@ mod tests {
     #[test]
     fn test_sql_pool_handler() {
         let pool = establish_connection();
-        let connection = sql_pool_handler(&pool.unwrap());
-        assert!(connection.is_ok());
+        assert!(pool.is_ok());
+        if let Ok(pool_instance) = pool {
+            let connection = sql_pool_handler(&pool_instance);
+            assert!(connection.is_ok());
+        }
     }
 }

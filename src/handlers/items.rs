@@ -37,9 +37,10 @@ fn req_query_to_map(query_string: String) -> HashMap<String, String> {
                 .iter()
                 .fold(HashMap::new(), |mut acc, query_element| {
                     let query_element_vec: Vec<&str> = query_element.split('=').collect();
-                    let key = query_element_vec.get(0).unwrap();
-                    let val = query_element_vec.get(1).unwrap();
-                    acc.insert(String::from(*key), String::from(*val));
+                    // Only process valid query parameters with key and value
+                    if let (Some(key), Some(val)) = (query_element_vec.get(0), query_element_vec.get(1)) {
+                        acc.insert(String::from(*key), String::from(*val));
+                    }
                     acc
                 })
         }
@@ -88,11 +89,16 @@ pub async fn delete_item(id: web::Path<String>, req: HttpRequest, pool: web::Dat
     let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
             Ok(sql_pooled_connection) => sql_pooled_connection,
-            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+            Err(_) => return HttpResponse::InternalServerError().body("Database connection failed")
         };
 
-    let delete_count = Item::destroy(id.as_str(), namespace, &mut sql_pooled_connection).unwrap();
-    HttpResponse::Ok().body(format!("{} items deleted", delete_count))
+    match Item::destroy(id.as_str(), namespace, &mut sql_pooled_connection) {
+        Ok(delete_count) => HttpResponse::Ok().body(format!("{} items deleted", delete_count)),
+        Err(e) => {
+            error!("Failed to delete item '{}': {}", id, e);
+            HttpResponse::InternalServerError().body("Failed to delete item")
+        }
+    }
 }
 
 pub async fn get_item(id: web::Path<String>, req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
@@ -161,10 +167,16 @@ pub async fn list_items(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse
     let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
             Ok(sql_pooled_connection) => sql_pooled_connection,
-            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+            Err(_) => return HttpResponse::InternalServerError().body("Database connection failed")
         };
 
-    let results = ItemList::list(&mut sql_pooled_connection, namespace).unwrap();
+    let results = match ItemList::list(&mut sql_pooled_connection, namespace) {
+        Ok(items) => items,
+        Err(e) => {
+            error!("Failed to list items: {}", e);
+            return HttpResponse::InternalServerError().body("Failed to retrieve items");
+        }
+    };
 
     let delimiter: &str = match query_options_map.get("delim") {
         Some(d) => d.as_str(),
@@ -197,10 +209,16 @@ pub async fn script(req: HttpRequest, pool: web::Data<Pool>) -> HttpResponse {
     let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
             Ok(sql_pooled_connection) => sql_pooled_connection,
-            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+            Err(_) => return HttpResponse::InternalServerError().body("Database connection failed")
         };
 
-    let results = ItemList::list(&mut sql_pooled_connection, namespace).unwrap();
+    let results = match ItemList::list(&mut sql_pooled_connection, namespace) {
+        Ok(items) => items,
+        Err(e) => {
+            error!("Failed to generate script: {}", e);
+            return HttpResponse::InternalServerError().body("Failed to generate script");
+        }
+    };
 
     let result_collection: String = results.iter().fold(String::from("#!/bin/bash\n"),
     |mut acc, result| {
@@ -232,14 +250,16 @@ pub async fn update_item(params: web::Path<(String, String)>, req: HttpRequest, 
     let mut sql_pooled_connection =
         match sql_pool_handler(pool) {
             Ok(sql_pooled_connection) => sql_pooled_connection,
-            Err(_) => return HttpResponse::Unauthorized().body("SQL Error")
+            Err(_) => return HttpResponse::InternalServerError().body("Database connection failed")
         };
 
-    Item::replace_into(id.as_str(), val.as_str(), namespace, &mut sql_pooled_connection).unwrap();
-
-    HttpResponse::Ok().body(
-        val
-    )
+    match Item::replace_into(id.as_str(), val.as_str(), namespace, &mut sql_pooled_connection) {
+        Ok(_) => HttpResponse::Ok().body(val),
+        Err(e) => {
+            error!("Failed to update item '{}': {}", id, e);
+            HttpResponse::InternalServerError().body("Failed to update item")
+        }
+    }
 }
 
 
@@ -252,9 +272,10 @@ mod tests {
     use super::*;
     #[actix_rt::test]
     async fn test_script() {
+        let pool = establish_connection().expect("Failed to establish connection");
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(establish_connection().unwrap()))
+                .app_data(Data::new(pool))
                 .route("/script", web::get().to(script)),
         )
         .await;
@@ -269,9 +290,10 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_update_item() {
+        let pool = establish_connection().expect("Failed to establish connection");
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(establish_connection().unwrap()))
+                .app_data(Data::new(pool))
                 .route("/update/{id}/{val}", web::put().to(update_item)),
         )
         .await;

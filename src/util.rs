@@ -24,7 +24,10 @@ pub fn get_namespace(query_options_map: &HashMap<String, String>) -> &str {
 pub fn get_pool_size_per_worker() -> u32 {
     let key = "LITTLE_LOOKUP_POOL_SIZE_PER_WORKER";
     match std::env::var(key) {
-        Ok(val) => val.parse::<u32>().unwrap(),
+        Ok(val) => val.parse::<u32>().unwrap_or_else(|_| {
+            eprintln!("Warning: {} is not a valid u32, using default value 5", key);
+            5
+        }),
         Err(_) => 5
     }
 }
@@ -49,7 +52,10 @@ pub fn get_psk(psk_type: PSKType) -> String {
 pub fn get_worker_num() -> usize {
     let key = "LITTLE_LOOKUP_WORKER_NUM";
     match std::env::var(key) {
-        Ok(val) => val.parse::<usize>().unwrap(),
+        Ok(val) => val.parse::<usize>().unwrap_or_else(|_| {
+            eprintln!("Warning: {} is not a valid usize, using default value 2", key);
+            2
+        }),
         Err(_) => 2
     }
 }
