@@ -108,6 +108,34 @@ mod tests {
     }
 
     #[test]
+    fn test_get_pool_size_per_worker_invalid() {
+        // Test with invalid (non-numeric) value - should use default
+        std::env::set_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER", "not_a_number");
+        assert_eq!(get_pool_size_per_worker(), 5);
+
+        std::env::remove_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER");
+    }
+
+    #[test]
+    fn test_get_pool_size_per_worker_negative() {
+        // Test with negative number - should still parse
+        std::env::set_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER", "-5");
+        // Negative u32 will fail to parse, so should default to 5
+        assert_eq!(get_pool_size_per_worker(), 5);
+
+        std::env::remove_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER");
+    }
+
+    #[test]
+    fn test_get_pool_size_per_worker_zero() {
+        // Test with zero
+        std::env::set_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER", "0");
+        assert_eq!(get_pool_size_per_worker(), 0);
+
+        std::env::remove_var("LITTLE_LOOKUP_POOL_SIZE_PER_WORKER");
+    }
+
+    #[test]
     fn test_get_psk() {
         // Test when the environment variable is set
         std::env::set_var("LITTLE_LOOKUP_PSK_READ", "test_read_psk");
@@ -133,5 +161,42 @@ mod tests {
         // Test when the environment variable is not set
         std::env::remove_var("LITTLE_LOOKUP_WORKER_NUM");
         assert_eq!(get_worker_num(), 2);
+    }
+
+    #[test]
+    fn test_get_worker_num_invalid() {
+        // Test with invalid (non-numeric) value - should use default
+        std::env::set_var("LITTLE_LOOKUP_WORKER_NUM", "invalid");
+        assert_eq!(get_worker_num(), 2);
+
+        std::env::remove_var("LITTLE_LOOKUP_WORKER_NUM");
+    }
+
+    #[test]
+    fn test_get_worker_num_zero() {
+        // Test with zero
+        std::env::set_var("LITTLE_LOOKUP_WORKER_NUM", "0");
+        assert_eq!(get_worker_num(), 0);
+
+        std::env::remove_var("LITTLE_LOOKUP_WORKER_NUM");
+    }
+
+    #[test]
+    fn test_get_namespace_priority() {
+        let mut query_options_map = HashMap::new();
+
+        // Test "ns" takes priority over "namespace"
+        query_options_map.insert(String::from("ns"), String::from("ns_value"));
+        query_options_map.insert(String::from("namespace"), String::from("namespace_value"));
+        assert_eq!(get_namespace(&query_options_map), "ns_value");
+    }
+
+    #[test]
+    fn test_get_namespace_with_empty_string() {
+        let mut query_options_map = HashMap::new();
+
+        // Test with empty string value
+        query_options_map.insert(String::from("ns"), String::from(""));
+        assert_eq!(get_namespace(&query_options_map), "");
     }
 }
