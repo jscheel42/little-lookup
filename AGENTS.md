@@ -4,26 +4,18 @@
 
 - **Build**: `cargo build --release`
 - **Test all**: `cargo test`
-- **Test single**: `cargo test <test_name>`
-- **Lint**: `cargo clippy` (if available)
+- **Test single**: `cargo test <test_name>` (e.g., `cargo test test_index`)
+- **Lint**: `cargo clippy`
+- **Format**: `cargo fmt`
 
 ## Code Style Guidelines
 
-- **Imports**: Group standard library, external crates, then local modules
-- **Formatting**: 4 spaces for indentation
-- **Types**: Explicit annotations for function parameters/returns
-- **Naming**: `snake_case` for functions/variables, `CamelCase` for types/structs
-- **Error handling**: Prefer `Result<T, Error>` over unwrap/expect where possible
-- **Database**: Use Diesel ORM with proper schema definitions
-- **Environment**: Configuration through environment variables (LITTLE_LOOKUP_*)
-- **Testing**: Write unit tests with `#[cfg(test)]` and integration tests for handlers
-- **Comments**: Prefer self-documenting code with minimal necessary comments
-- **Security**: Be cautious with user input in SQL queries to prevent injections
-
-## Cursor Rules
-
-None found.
-
-## Copilot Instructions
-
-None found.
+- **Imports**: Group std lib, external crates, then local (`crate::`) modules; one per line
+- **Formatting**: 4-space indentation, run `cargo fmt` before commits
+- **Types**: Explicit return types on functions; use type aliases for complex types (see `Pool`, `PooledConnection`)
+- **Naming**: `snake_case` for functions/variables, `CamelCase` for types/structs/enums
+- **Error handling**: Return `Result<T, diesel::result::Error>` or similar; avoid `unwrap()` in production code, use `match` or `?`
+- **Database**: Use Diesel ORM; define models with `#[derive(Queryable)]` / `#[derive(Insertable)]`
+- **Environment**: Config via env vars prefixed `LITTLE_LOOKUP_*`
+- **Testing**: Use `#[cfg(test)]` modules; async tests use `#[actix_rt::test]`; tests require running Postgres
+- **Security**: Validate user input; avoid raw SQL string interpolation (see `replace_into` for what NOT to do)
