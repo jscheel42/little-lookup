@@ -8,7 +8,6 @@ pub fn get_database() -> String {
     }
 }
 
-
 pub fn get_namespace(query_options_map: &HashMap<String, String>) -> &str {
     match query_options_map.get("ns") {
         Some(namespace) => return namespace.as_str(),
@@ -28,24 +27,24 @@ pub fn get_pool_size_per_worker() -> u32 {
             eprintln!("Warning: {} is not a valid u32, using default value 5", key);
             5
         }),
-        Err(_) => 5
+        Err(_) => 5,
     }
 }
 
 pub enum PSKType {
     READ,
-    WRITE
-} 
+    WRITE,
+}
 
 pub fn get_psk(psk_type: PSKType) -> String {
     let key = match psk_type {
-        PSKType::READ  => "LITTLE_LOOKUP_PSK_READ",
-        PSKType::WRITE => "LITTLE_LOOKUP_PSK_WRITE"
+        PSKType::READ => "LITTLE_LOOKUP_PSK_READ",
+        PSKType::WRITE => "LITTLE_LOOKUP_PSK_WRITE",
     };
 
     match std::env::var(key) {
         Ok(val) => val,
-        Err(_) => String::from("")
+        Err(_) => String::from(""),
     }
 }
 
@@ -53,10 +52,13 @@ pub fn get_worker_num() -> usize {
     let key = "LITTLE_LOOKUP_WORKER_NUM";
     match std::env::var(key) {
         Ok(val) => val.parse::<usize>().unwrap_or_else(|_| {
-            eprintln!("Warning: {} is not a valid usize, using default value 2", key);
+            eprintln!(
+                "Warning: {} is not a valid usize, using default value 2",
+                key
+            );
             2
         }),
-        Err(_) => 2
+        Err(_) => 2,
     }
 }
 

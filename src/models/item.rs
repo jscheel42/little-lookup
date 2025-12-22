@@ -24,54 +24,87 @@ pub struct NewItem<'a> {
 }
 
 impl ItemList {
-    pub fn list(connection: &mut PgConnection, namespace_id: &str) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
-        use crate::schema::items::dsl::{items, key, updated_at, namespace};
+    pub fn list(
+        connection: &mut PgConnection,
+        namespace_id: &str,
+    ) -> Result<std::vec::Vec<Item>, diesel::result::Error> {
+        use crate::schema::items::dsl::{items, key, namespace, updated_at};
 
-        let result = 
-            items
-                .filter(namespace.eq(namespace_id))
-                .order_by((key, updated_at.desc()))
-                .distinct_on(key)
-                .load::<Item>(connection)?;
+        let result = items
+            .filter(namespace.eq(namespace_id))
+            .order_by((key, updated_at.desc()))
+            .distinct_on(key)
+            .load::<Item>(connection)?;
 
         Ok(result)
     }
 }
 
 impl Item {
-    pub fn find(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<Item, diesel::result::Error> {
-        use crate::schema::items::dsl::{items, key, updated_at, namespace};
+    pub fn find(
+        key_id: &str,
+        namespace_id: &str,
+        connection: &mut PgConnection,
+    ) -> Result<Item, diesel::result::Error> {
+        use crate::schema::items::dsl::{items, key, namespace, updated_at};
 
-        items.filter(key.eq(key_id))
+        items
+            .filter(key.eq(key_id))
             .filter(namespace.eq(namespace_id))
             .order_by(updated_at.desc())
             .first(connection)
     }
-    
-    pub fn history(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<Vec<Item>, diesel::result::Error> {
-        use crate::schema::items::dsl::{items, key, updated_at, namespace};
 
-        items.filter(key.eq(key_id))
+    pub fn history(
+        key_id: &str,
+        namespace_id: &str,
+        connection: &mut PgConnection,
+    ) -> Result<Vec<Item>, diesel::result::Error> {
+        use crate::schema::items::dsl::{items, key, namespace, updated_at};
+
+        items
+            .filter(key.eq(key_id))
             .filter(namespace.eq(namespace_id))
             .order_by(updated_at.desc())
             .get_results(connection)
     }
 
-    pub fn destroy(key_id: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<usize, diesel::result::Error> {
+    pub fn destroy(
+        key_id: &str,
+        namespace_id: &str,
+        connection: &mut PgConnection,
+    ) -> Result<usize, diesel::result::Error> {
         use crate::schema::items::dsl::{items, key, namespace};
 
         let delete_count = diesel::delete(
-                items.filter(key.eq(key_id))
-                    .filter(namespace.eq(namespace_id))
-            )
-            .execute(connection).unwrap_or_default();
+            items
+                .filter(key.eq(key_id))
+                .filter(namespace.eq(namespace_id)),
+        )
+        .execute(connection)
+        .unwrap_or_default();
         Ok(delete_count)
     }
 
-    pub fn replace_into(key_id: &str, value: &str, namespace_id: &str, connection: &mut PgConnection) -> Result<(), diesel::result::Error> {
-        let q = format!("INSERT INTO items(key, val, namespace) VALUES ('{0}', '{1}', '{2}')",
-                        key_id, value, namespace_id);
-        diesel::sql_query(q).execute(connection)?;
+    pub fn replace_into(
+        key_id: &str,
+        value: &str,
+        namespace_id: &str,
+        connection: &mut PgConnection,
+    ) -> Result<(), diesel::result::Error> {
+        use crate::schema::items::dsl::items;
+
+        let now = Utc::now();
+        let new_item = NewItem {
+            key: key_id,
+            val: value,
+            updated_at: &now,
+            namespace: namespace_id,
+        };
+
+        diesel::insert_into(items)
+            .values(&new_item)
+            .execute(connection)?;
         Ok(())
     }
 }
@@ -154,7 +187,7 @@ mod tests {
 
         let find_result = Item::find(key_id, namespace_id, &mut connection);
         assert!(find_result.is_ok());
-        
+
         let found_item = find_result.unwrap();
         assert_eq!(found_item.key, key_id);
         assert_eq!(found_item.val, value);
@@ -171,7 +204,7 @@ mod tests {
 
         // Insert first value
         assert!(Item::replace_into(key_id, value1, namespace_id, &mut connection).is_ok());
-        
+
         // Insert second value (overwrites)
         assert!(Item::replace_into(key_id, value2, namespace_id, &mut connection).is_ok());
 
@@ -244,21 +277,21 @@ mod tests {
         // Insert multiple versions of key1
         assert!(Item::replace_into(key1, "v1", namespace_id, &mut connection).is_ok());
         assert!(Item::replace_into(key1, "v2", namespace_id, &mut connection).is_ok());
-        
+
         // Insert single version of key2
         assert!(Item::replace_into(key2, "v3", namespace_id, &mut connection).is_ok());
 
         // List should return both keys with latest values
         let list_result = ItemList::list(&mut connection, namespace_id);
         assert!(list_result.is_ok());
-        
+
         let items = list_result.unwrap();
         let item1 = items.iter().find(|item| item.key == key1);
         let item2 = items.iter().find(|item| item.key == key2);
 
         assert!(item1.is_some());
         assert!(item2.is_some());
-        
+
         assert_eq!(item1.unwrap().val, "v2");
         assert_eq!(item2.unwrap().val, "v3");
     }
